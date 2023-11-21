@@ -74,9 +74,8 @@ int main()
 	MemoryPool memoryPool;
 
 	char* string_v1 = (char*)memoryPool.allocate(10);
-	printf("<%d> <%d>\n", DEF_BLOCK_SIZE-SUB_SIZE, strlen("string_v1"));
 	memcpy(string_v1, "string_v1", 9);
-	string_v1[9]=0;
+	string_v1[9]=' ';
 	memoryPool.printBlock();
 	//memcpy(string_v1+4, "hi", 3);
 
