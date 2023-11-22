@@ -54,3 +54,55 @@ printf("결과: %s\n", temp); // 12345
 ```
 - temp[5] = **0** || temp[5] = **'\0'** : 문자의 끝을 의미
 - 따라서, memset(temp, 0, 10); 할 때, 주의 → 모든 char 문자열들을 ( 문자의 끝 )으로 만들고 시작하는 것을 뜻함
+
+✅ 변수
+- Class 멤버 젼수
+  - 기본적으로 초기화 되어서, (( 0 / nullptr )) 로 값이 저장된다.
+  - Garbage 값으로 저장 X
+  - Class 의 멤버 변수는 일반적으로 힙 영역에 저장됩니다.
+    - Class 는 일반적으로 (( 동적 할당 ))
+    - Stack 은 일반적으로 (( 정적 할당 ))
+
+✅ 구조체 스스로 할당
+```cpp
+struct Block {
+  struct Block* self;
+};
+
+// struct Block block; (X)
+struct Block* block = (struct Block*) malloc(sizeof(struct Block)); // (O)
+```
+- (X): struct Block block;
+  - 자기 자신 ( self ) 가 있는 구조체는 정적 할당이 안된다.
+  - 자기 자신의 (( 구조체의 크기 )) 를 가늠할 수 없으니까
+- (O): struct Block* block = (struct Block*) malloc(sizeof(struct Block));
+
+✅ 포인터 복사
+```cpp
+void* p1 = malloc(sizeof(10)); // 주소값 : 0x7fff54f32140 0x7fff54f32150 데이터값 : 0x1ad5eb0
+void* p2 = p1;                 // 주소값 : 0x7fff54f32148
+(   ) p3 = &p1;                // 주소값 : 0x7fff54f32150
+
+p1 = (char*)p1 + 10;
+printf("p1: [%p:%p]  p2:[%p:%p]  p3:[%p:%p]", &p1, p1, &p2, p2, &p3, *p3);
+// 결과
+// p1: [(     ):(     )]  p2:[(     ):(     )]  p3:[(     ):(     )]
+```
+- ( <b>void** </b> ) p3 = &p1;
+  - 포인터의 주소값 type은 void** 이어야 한다.
+- p1: [(**0x7fff54f32140**):(**0x1ad5eba**)]  p2:[(**0x7fff54f32148**):**0x1ad5eb0**)]  p3:[(**0x7fff54f32150**):(**0x1ad5eba**)]
+  ![image](https://github.com/shpark0308/c_study_develop/assets/60208434/6b946c70-b174-467d-a635-3389cc04c34b)
+- p1 = (char*)p1 + 10;
+  - void* 는 (포인터) 이기 때문에 산술을 할 수 없다.
+  - 따라서 다른 유형의 포인터 ( <b>char*</b> ) 캐스팅 후, 산술 해야한다.
+ 
+✅ 메모리 해제
+```cpp
+// 위에 코드에 이어서 메모리 해제를 시켜주려면...
+free(p2);
+```
+- free(p2);
+  - 위 코드에서 malloc 했던 메모리의 시작 주소가 p2 이기 때문에 free(p2) 를 해야한다.
+- free(p1) / free(p3) 
+  - p1, p3 는 힙 영역에 선언 한 것이 아니기 때문에, free 할 필요가 없다.
+  - free 를 할 경우, "free(): invalid pointer 중지됨 (core dumped)" 가 발생
