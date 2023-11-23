@@ -13,6 +13,7 @@
     - ▫ 반복적인 동적 할당은 (( 사용자 영역 코드 )) ↔ (( 커널 영역 )) 을 전환 (시스템 전환) 이 많아지기 때문에 성능이 저하된다.
     - ▫ ( free / delete ) 를 못할 경우, 메모리 릭이 발생하여, 점유하는 메모리 영역이 증가해, 성능 저하를 발생
     - ▫ ( free / delete ) 를 못할 경우, 점유하는 메모리 영역이 증가하여, 메모리가 귀해져서, 하드디스크를 참조하게 되고, 이는 성능 저하를 발생시킴
+    - ▫ 파편화는 시스템 성능을 저하시킴
  
 ✅ 메모리 풀
 - 고정된 크기의 Block 을 미리 할당 하여, malloc / new 연산을 통해 유사한 메모리 동적 할당을 가능하게 해줌
@@ -41,7 +42,54 @@
   - 컴파일러가 제공하는 할당자보다 속력이 더 빨라야 한다
   - 미리 할당해놓고 가져다가 사용하기 때문에, 잦은 시스템 전환을 막을 수 있어 속력 향상
 - 안정성
-  - 프로그램 종료 이전, 메모리 누수 방지  
+  - 프로그램 종료 이전, 메모리 누수 방지
+
+#### 1️⃣ cs_pool
+✅ CS_Pool
+- 어느 영역 / 파트 에서 이들을 (( 관리 )) 하기 위해, 사용됨
+  - cs_tcpsocket
+  - cs_thinthread
+  - 기타 : cs_memory, cs_message, cs_pipeline, cs_semaphore ..
+- **CS_Pool_Destroy**
+  - 예상치 못하게 서버가 강제 종료되었을 경우, (( **할당된 메모리** )) 들을 안전하게 해제할 때, 사용
+  - CS_POOL_Destroy(pool_id, void (*delete_func)) 을 사용하여, delete_function callback 을 통해, s_pool 에 할당된 모든 자원 ( map ) 을 하나하나 안전하게 delete_function 을 통해, 해제 해주는 기능을 한다.
+  - 
+
+✅ 사용
+1. cs_tcpsocket
+   - CS_TcpSocket_Init
+     - **static** CS_POOL_ID	s_pool_msg; // cs_tcpsocket.cpp 파일의 상단에 선언
+       - 파일에서 한번만 선언되고
+       - 계속 이 변수 ( s_pool_msg ) 하나로만 사용됨
+     - **CS_POOL_Create**(&s_pool_msg, .. ) // s_pool_msg 를 드디어 생성
+   - CS_TcpSocketServer/Client_Create()
+     - nRet = **CS_POOL_Set**(s_pool_msg, (cs_uint64)pTcpSock, (void*)pTcpSock); // pTcpSock 포인터를 ( key, value ) 값으로 넣음
+     - socket 이 생성될 때마다, (( **socket_pool** )) ( s_pool_msg ) 에 pTcpSock이 추가됨
+     - 이는 socket 이라는 영역( s_pool_msg )에서 연결된 모든 소켓 ( pTcpSock )에 대해 관리하기 위함
+   - **CS_POOL_Get()**
+     - ( !CS_POOL_Get(s_pool_msg, (cs_uint64)hTCP) )
+     - 이미 ( Disconnect ) / Remove 된, **Socket** 을 (( 다른 Thread / 다른 코드 ))에서 참조하고자 할 때, 이를 방지하기 위해 사용
+       - ▫ **cs_tcpsocket 에서 cs_pool 을 사용하는 가장 중요한 이유**
+   - CS_TcpSocket_Close()
+     - **CS_POOL_Delete**(s_pool_msg, (cs_uint64)pTcpSock) 해당, pTcpSock 을 지우게 된다.
+
+✅ 기능
+1. CS_Pool_Create
+2. **CS_Pool_Destroy**
+  - 메모리 할당된 영역에서, 갑자기 예기치 못하게 종료되었을때, 
+✅ 구성
+
+✅ Set
+
+✅ CS_Pool_Destroy 기능이 어떻게 되는지
+
+
+#### 2️⃣ OAL ( OS Abstract layer )
+✅ OAL
+- 운영체제 ( Window / Posix )에 상관없이 동일한 기능을 사용하기 위함
+
+✅ 구성 ( 파일 구성 )
+- [ common ] [ posix ] [ windows ] 로 구성
 
 #### 3️⃣ 기타
 ✅ 문자열
