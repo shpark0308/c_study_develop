@@ -106,3 +106,51 @@ free(p2);
 - free(p1) / free(p3) 
   - p1, p3 는 힙 영역에 선언 한 것이 아니기 때문에, free 할 필요가 없다.
   - free 를 할 경우, "free(): invalid pointer 중지됨 (core dumped)" 가 발생
+
+✅ std::vector
+```cpp
+#include <vector>
+#include <algorithm> // std::find, std::distance 사용하기 위함
+
+std::vector<int> vec = { 1,2 3,4,5 }
+
+// find
+auto iter = std::find(vec.begin(), vec.end(), 4);
+if (iter == vec.end()) {
+  printf("not found in vector");
+}
+
+// index
+int index = std::distance(vec.begin(), iter);
+printf("index: %d"); // index = 3 반환
+```
+- #include <algorithm>
+  - std::find / std::distance 를 사용하기 위한 (( header ))
+- std::find(vec.begin(), vec.end(), value)
+  - (**find O**) auto iter != vec.end()
+  - (**find X**) auto iter == vec.end()
+- std::distance(vec.begin(), iter)
+  - vec.begin() 부터 iter 까지의 distance 를 계산하여 index 값을 반환함
+ 
+✅ pointer
+``` cpp
+void* double_v1 = (double*) malloc(sizeof(double)); // 0x17a9eb0
+void* double_v2 = (double*)double_v1 + sizeof(double);
+void* double_v3 = (char*)double_v1 + sizeof(double);
+void* double_v4 = (double*)((char*)double_v1+sizeof(double));
+
+printf("[1]. double_v1: %p"); // (        )
+printf("[2]. double_v2: %p"); // (        )
+printf("[3]. double_v3: %p"); // (        )
+printf("[4]. double_v4: %p"); // (        )
+```
+- [1]. (**0x17a9eb0**)
+- [2]. (**0x17a9ef0**)
+  - (double*)double_v1 // 단위: double* 여서 8byte 가 되고 sizeof(double) 은 8이기 때문에 8*8 = 64 (10진수) 가 된다.
+  - 따라서, double_v2 = double_v1( 0x17a9eb0 ) + 40(16진수, 10진수 : 64 ) = 0x17a9ef0 이 된다.
+- [3]. (**0x17a9eb8**)
+  - (char*)double_v1 // 단위: char* 여서 1byte가 되고, sizeof(double) 은 8이기 떄문에 1*8 = 8 (10진수) 가 된다.
+  - 따라서, double_v3 = double_v1( 0x17a9eb0 ) + 8(16진수, 10진수 : 8 ) = 0x17a9eb8 이 된다.
+- [4]. (**0x17a9eb8**)
+  - 위에 double_v3와 같은 연산이기 때문에, 포인터의 위치는 0x17a9eb8 이 된다.
+  - 하지만 변환은 (double*) 가 된다
