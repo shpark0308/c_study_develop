@@ -46,10 +46,44 @@
         - 반환값 (int) : 성공 ( 0 ) 실패 ( -1 )
     - ```cpp
       int recv_size, send_size;
-      socklen_t recv_opt = 
+      socklen_t recv_opt = sizeof(recv_size);
+      socklen_t send_opt = sizeof(send_size);
+
+      int rRet = getsockopt(sock, SOL_SOCKET, SO_RCVBUF, &recv_size, &recv_opt);
+      int sRet = getsockopt(sock, SOL_SOCKET, SO__SNDBUF, &send_size, &send_opt);
+      printf("recv_size : %d send_size : %d"); // 87380, 16384
       ```
       ![image](https://github.com/shpark0308/c_study_develop/assets/60208434/c8ed112b-3460-49c2-9f6f-39565dee901c)
-
+        - socket buffer 의 최대 크기는 일반적으로 8GB ( 8096 GB )
+        - send 할 수 있는 데이터가 꽉 차면, 전송을 하지 않기 때문에, **데이터 유실에 대한 위험은 없다.**
+- **소캣 대 소켓이 1:1 이어야 한다.**
       
 (2). 비연결 지향성 소켓 ( SOCK_DGRAM ) <br/>
+- [ UDP | 비신뢰성 | 독립된 데이터 패킷 | 연결 X ]
+- 데이터 유실 가능성이 크고, **빠른 전송**을 목적으로 한다.
+- 데이터 순서를 보장하지 않는다
+- 데이터의 경계가 있다
+- 1:1 / 1:N 통신도 가능하다
+  - 데이터를 패킷 단위로 전송
+  - 각 패킷은 독립적적
+  - Mulicast, 브로드 캐스트에 사용
+- (( 연결 )) 이라는 개념이 없음
 
+✅ 프로토콜 ( int protocol )
+- socket 이 (( 최종적으로 )) 사용할 프로토콜 정보
+  - 앞서, [ 프로토콜 체계 ], [ 데이터 전송 방식 ] 으로도 충분히 프로토콜 정보를 제공할 수 있지만
+  >하나의 프로토콜 체계 안에 동일한 데이터 전송방식을 같은 동일한 프로토콜이 둘 이상 존재할 수 있다.
+
+(1). 연결 지향형 소켓   ( TCP )
+```cpp
+int tcp_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+```
+(2). 비연결 지향성 소켓 ( UDP )
+```cpp
+int udp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+```
+<br/>
+
+#### 1️⃣ TCP 프로토콜
+✅ 특성
+- recv / send 가 (( **stream** )) 처럼 전달되기 때문에, Packet 의 (( 전체 길이 ))를 [ 연동 규격서 ]에 명시해야한다.
