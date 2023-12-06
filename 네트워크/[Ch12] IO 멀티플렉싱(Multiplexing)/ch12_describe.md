@@ -1,4 +1,4 @@
-![image](https://github.com/shpark0308/c_study_develop/assets/60208434/79be927b-814c-4390-abd3-f6521816aa50)### Ⅰ. I/O Mulitiplexing
+### Ⅰ. I/O Mulitiplexing
 #### 0️⃣ Multiplexing
 ✅ Multiplexing<br/>
 ![image](https://github.com/shpark0308/c_study_develop/assets/60208434/216a6800-c917-4713-8064-bd069f937405)
@@ -128,6 +128,162 @@ if (FD_ISSET(STDIN_FILENO, &read_fds)) {
 ```
 
 ✅ poll()
+
+### Ⅱ. thread
+#### 0️⃣ thread 구조
+✅ 시나리오 1
+- [ 하나의 스레드 #3 (종료 상황) ] → [ 다른 스레드 #1 #2 .. #N  (종료 시키기 ) ]
+``` cpp
+void* thread_func1() {}
+void* thread_func2() {}
+void* thread_func3() {}
+
+void main()
+{
+  // 스레드 생성
+  pthread_create(thread_func1); pthread_create(thread_func2); pthread_create(thread_func3);
+
+  // #3 스레드가 끝나면,
+  pthread_join(thread_func3);
+
+  // 나머지 #1 #2 스레드 종료
+  pthread_cancle(thread_func1); pthread_cancle(thread_func2);
+
+  pthread_join(thread_func1); pthread_join(thread_func2);
+}
+```
+- main() 함수에서 thread_3가 종료된 이후, thread_1, thread_2에 대한 처리를 할 수 있다.
+
+✅ 시나리오 2
+- 스레드 1 (종료) → 스레드 2 (종료) **or** 스레드 2 (종료) → 스레드 1 (종료)
+- main() 함수에서는 thread_1 또는 thread_2 인지 어느 스레드가 종료되었는지를 모르니까 스레드 상태를 check 해야하는 스레드 관리자가 필요
+- 일반적으로, main() 함수에서는, while 문을 돌면서, polling 방식으로 스레드 상태 확인
+``` cpp
+enum Thread_State
+{
+  THREAD_RUNNING,
+  THREAD_COMPLETED,
+  THREAD_ERROR
+};
+
+enum Thread State thread_state = THREAD_RUNNING;
+void* thread_func1() { thread_state = THREAD_COMPLETED; exit(1); }
+void* thread_func2() { thread_state = THREAD_COMPLETED; exit(1); }
+
+// 스레드 관리자
+while(thread_state == THREAD_RUNNING) // 스레드 상태 check
+{
+  // 코드 작업
+  if (thread_state == THREAD_COMPLATED) {
+  }
+}
+```
+- POSIX 스레드는 스레드 상태를 제공하는 함수가 없다
+
+✅ 종료 시나리오 ( **중요** )
+
+(1). pthread_cancel() ( 종료 예약 ) ❌
+  - cancellation point 가 없을 경우, 의도 했던 것과 다르게 **종료**를 하지 못하게 된다.
+    ```cpp
+    void* thread_func(void* arg) {
+      while(true) {
+        printf("thread running...");
+      }
+    }
+
+    pthread_cancle(my_thread);
+    pthread_join(my_thread);
+    ```
+    - 위와 같은 상황, thread_func 의 while 문에서는 cancellation point 가 없다.
+    - 그럼 종료를 하지 못하게 된다.
+  - 언제 종료될지, main() 함수는 예측 하지 못함 <br/>
+  
+(2) pthread_kill() ( 강제 종료 ) ❌
+  - 강제 종료 시, 해당 스레드가 실행 중인 작업을 즉시 중단해야 해서, 권장하지 않음
+  - 자원 누수, 데이터 불일치 문제 발생
+  - 시그널을 보내어, 스레드를 종료 시킴
+    - SIGINT ( 인터럽트 ), 종료 예약
+    - SIGKILL ( 강제 종료 )
+
+(3) **bExit** ( void* arg ) ✔
+``` cpp
+void* thread_func(void* arg)
+{
+  bool* temp = (bool*)arg;
+  bool bExit = *temp;
+
+  while(bExit)
+  {
+    // 코드 실행
+  }
+}
+```
+- void* arg, 인자로 넘겨서 다른 스레드도 관리
+- 다른 스레드도 동일하게 bExit 일 경우, 종료할 수 있도록 설계
+
+🔯 **블로킹**, 종료 시나리오
+(3) bExit ( void* arg )
+``` cpp
+void* thread_func(void* arg)
+{
+  bool* temp = (bool*)arg;
+  bool bExit = *temp;
+
+  while(bExit)
+  {
+    int bRet = < blocking... , timeout >
+  }
+}
+```
+<br/>
+- <b/>블로킹 되어도, 대다수의 함수들이, 오랜 블로킹이 아니라, timeout 으로 바로 빠져나오기 때문에, 이런식으로 코드를 짜야한다.</b>
+<br/>
+
+#### 1️⃣ thread 종료
+✅ pthread_cancel ( 스레드 취소 )
+```cpp
+int pthread_cancel(my_thread);
+```
+- 다른 특정 스레드를 취소 요청을 보내어, 스레드 종료를 예약
+- 종료 예약을 하고, 해당 스레드에서 적절한 취소 지점 ( cancellation point ) 를 통해 종료
+----
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/9403b044-f333-4f35-92aa-59c9d34498fc)
+- 실제로, cancel() 하도고, thread 가 진행되는 것을 알 수 있다.
+
+✅ pthread_kill
+```cpp
+int pthread_kill(my_thread, SIGINT); // 성공 (0) 실패 (-1) ( 인터럽트, 종료 예약 )
+int pthread_kill(my_thread, SIGKILL); // ( 강제 종료 )
+```
+- 강제 종료 시, 해당 스레드가 실행 중인 작업을 즉시 중단해야 해서, 권장하지 않음,
+- 자원 누수, 데이터 불일치 등의 문제가 발생할 수 있음
+- pthread_kill 도 어디까지나, (( 종료 예약 ))일 뿐이다.
+- 시그널을 my_thread 에 전송하여 종료시킴
+  - SIGINT 시그널 : 인터럽트 ( Ctrl+C ) ( 종료 예약 )
+  - SIGKILL 시그널 : ( 강제 종료 )
+
+✅ pthread_exit
+- (( 현재 스레드 )) 를 종료한다.
+- 안전하게 자원 해제
+
+🔯 cancellation point
+- thread 에서 (( **종료 요청** )) 이 들어오면, 바로 종료 ( 죽는다 )가 아니라 적절한, cancellation point 에서 종료된다.
+- [취소 가능 지점] ( POSIX 에서 정의한 취소 가능 지점 )
+  - (1). I/O 함수
+    - read, write, open, close 등의 파일 I/O 관련 함수는 최소 가능 지점이다.
+  - (2). 동기화 함수
+    - pthread_mutex_lock, pthread_mutex_unlock
+  - (3). 동적 메모리 할당 함수
+    - malloc, free, calooc 등
+  - 시그널 관련 함수
+    - sigwait 등
+
+#### 2️⃣ thread 종료 대기
+✅ pthread_join
+```cpp
+int pthread_join(pthread, void** retval); // 성공 (0) 실패 (-1)
+```
+- 종료 대기
 
 #### 4️⃣ 기타
 ✅ struct timeval
