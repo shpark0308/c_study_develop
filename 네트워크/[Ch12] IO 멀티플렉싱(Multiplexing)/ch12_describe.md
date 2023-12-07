@@ -1,5 +1,5 @@
-### Ⅰ. I/O Mulitiplexing
-#### 0️⃣ Multiplexing
+### Ⅰ. Mulitiplexing
+#### 1️⃣ Multiplexing
 ✅ Multiplexing<br/>
 ![image](https://github.com/shpark0308/c_study_develop/assets/60208434/216a6800-c917-4713-8064-bd069f937405)
 
@@ -72,7 +72,6 @@
 (3). (1초)[ 500th ][ 499th] [ 1th ] ( 1초에 각 입력링크에서 500개를 보내니까 1초에 500프레임 발생 ) <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1프레임 = 1/500 sec = 0.002 sec = **2ms** <br/>
 (4). 1프레임 당 : 514bit / 2ms 에 전달, 514bit * 500 = 257,000bit/sec = **257kbps**<br/>
-
 <br/>
 
 #### 1️⃣ I/O Multiplexing ( 네트워크 Multiplexing )
@@ -85,8 +84,10 @@
 (1). select : 가장 오래된 I/O Multiplexing 매커니즘 중 하나로, 여러 개의 소켓을 감시하고, 그 중 어떤 소켓에서 입출력 가능한지 선택 <br/>
 (2). poll : seleoct의 대안으로 간단하고 직관적이다, 파일 디스크립터의 상태를 감시하고 이벤트 발생 시, 알려줌 <br/>
 (3). epoll : 리눅스에서 사용되는 I/O Multiplexing 매커니즘 중 하나로, select 와 poll 의 단점을 극복하고 더 효율적으로 동작 <br/>
+<br/>
 
-#### 2️⃣ select()
+### Ⅱ. I/O Multiplexing
+#### 1️⃣ select()
 ✅ select
 - 가장 오래된 I/O 매커니즘, 여러 개의 (( 소켓 )) 을 감시, 어떤 소켓에서 입출력이 가능한지 선택
 - [원리]
@@ -122,7 +123,7 @@ if (FD_ISSET(STDIN_FILENO, &read_fds)) {
 ```
 <br/>
 
-#### 3️⃣ poll()
+#### 2️⃣ poll()
 ✅ poll
 - select() 와 유사하지만 제한점이 덜하다.
 - (( 파일 디스크립터 수에 대한 제한 )) 이 없다
@@ -157,7 +158,7 @@ if (poll_fds[0].revents & POLLIN)
 ```
 <br/>
 
-#### 4️⃣ epoll()
+#### 3️⃣ epoll()
 ✅ epoll()
 - 리눅스에서 사용되는 I/O 매커니즘 중 하나, 다른 운영체제에서는 사용이 안됨 ( 이식성이 안좋음 )
 - select와 poll 의 단점을 극복하고 더 효율적으로 동작
@@ -171,7 +172,7 @@ if (poll_fds[0].revents & POLLIN)
 ```cpp
 typedef union epoll_data
 {
-  void* ptr; // 사건이 발생한 fd 들의 구조체 배열을 셋팅
+  void* ptr; // 해당 파일 디스크립터가 사용할 구조체
   int fd;    // 이벤트가 일어나게 될 파일 디스크립터
   _unit32_t u32;
   _unit64_t u64;
@@ -179,7 +180,7 @@ typedef union epoll_data
 
 struct epoll_event
 {
-  __unint32_t events;  // 관찰할 이벤트 ( EPOLL_IN )
+  __unint32_t events;  // 관찰할 이벤트 ( EPOLLIN )
   epoll_data_t data;
 };
 ```
@@ -189,7 +190,22 @@ struct epoll_event
     - (2). 이벤트 발생 감지
   - [차이점]
     - 사건이 발생한 fd 들만의 구조체 배열을 셋팅
-  ⇨ 상태 변화를 위해 일일히 전체 파일 디스크립터를 대상으로 **반복문**을 돌릴 필요가 없다.
+```cpp
+///////// select & poll ///////// 
+for (int i=0; i<fd_max; i++)
+{
+  if (i == serv_sock)
+  {
+    // 이런식으로 일일이 for문을 돌면서 확인할 필요가 없다
+  }
+}
+
+///////// epoll ///////// 
+event_count = epoll_wait(epoll_fd, events, EPOLL_SIZE, -1 );
+if (events[0].data.fd == serv_sock) {}
+```
+⇨ 상태 변화를 위해 일일히 전체 파일 디스크립터를 대상으로 **반복문**을 돌릴 필요가 없다.
+⇨ 이벤트 변화가 있는 파일 디스크립터만 확인하면 된다.
 
 ✅ 코드 작성
 (1). 파일 디스크립터 저장소 생성<br/>
@@ -204,14 +220,15 @@ int epoll_create(int size);
 
 (2). 관찰 대상으로 등록
 ```cpp
-int epoll_ctrl(int epfd, int op, struct epoll, struct epoll_event* event);
+int epoll_ctl(int epfd, int op, int target_fd , struct epoll_event* event);
 ```
 - int epfd : 상태 변화를 등록할 epoll 인스턴스 파일 디스크립터
 - op : (등록/삭제) 등의 이벤트 상황을 변경할 수 있다.
   - EPOLL_CTL_ADD : fd 를 epoll 에 등록
   - EPOLL_CTL_DEL : fd 를 epoll 에 삭제
   - EPOLL_CTL_MOD : 등록된 fd 의 이벤트 발생 상황 변경
- 
+ - int target_fd : 관찰 대상 fd
+
 (3). 변화 대기
 ```cpp
 int epoll_wait(int epfd, struct epoll_event *event, int maxevents, int timeout);
@@ -220,10 +237,11 @@ int epoll_wait(int epfd, struct epoll_event *event, int maxevents, int timeout);
 - events : 이벤트가 발생한 fd가 채워질 buffer 의 주소값
 - maxevents : 이전에 events buffer 에 등록 가능한 최대 이벤트
 - timeout : 1/1000초
+  - -1 : 무한 대기
 - 성공 ( 준비된 파일 디스크립터 수 반환 ), 실패 ( -1 )
+<br/>
 
-
-### Ⅱ. thread
+### Ⅲ. thread
 #### 0️⃣ thread 구조
 ✅ 시나리오 1
 - [ 하나의 스레드 #3 (종료 상황) ] → [ 다른 스레드 #1 #2 .. #N  (종료 시키기 ) ]
@@ -467,7 +485,6 @@ printf("sizeof(stu) : (%d)", sizeof(stu)); // 8byte
 - 5byte 가 아니라 8byte 인 이유는, 각 멤버를 저장하기 위해서, 기본 4 byte 단위로 구성한다. ( 4의 배수 )
 - char 데이터 1개를 저장하더라도, 그 1개의 데이터를 읽어오기 위해서, 기본적으로 4 byte 를 읽어오기 때문이다.
 
-
 ✅ 주소값 접근
 ```cpp
 const char* str = "ABCDEFG";
@@ -479,6 +496,17 @@ printf("%c %c %c", *(str+0), *(str+1), *(str+2)); // 주소값으로 접근
 ```
 - *(주소값) : 포인터 값
 
+✅ 배열 초기화
+``` cpp
+char buff[256];
+memset(buff, 0, sizeof(buff));
+
+int array[1024];
+memset(array, -1, sizeof(int)*1024);
+```
+- memset(array, -1, <b>sizeof(int)</b>*<b>1024</b>) 를 해야한다.
+
 ✅ 참고 사이트
 - [TDM] (https://neuro.tistory.com/59)
 - [struct 구조체 메모리공간] (https://blog.naver.com/sharonichoya/220495444611)
+- [epoll 코드] (https://redcoder.tistory.com/124)
