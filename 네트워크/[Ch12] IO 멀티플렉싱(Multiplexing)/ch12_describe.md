@@ -161,7 +161,7 @@ if (poll_fds[0].revents & POLLIN)
 ✅ epoll()
 - 리눅스에서 사용되는 I/O 매커니즘 중 하나, 다른 운영체제에서는 사용이 안됨 ( 이식성이 안좋음 )
 - select와 poll 의 단점을 극복하고 더 효율적으로 동작
-- (( 이벤트가 발생한 파일 디스크립터 )) 에 대해서만 작업을 수행 ( **이벤트 방식** )
+- (( 이벤트가 발생한 파일 디스크립터 )) 에 대해서만 작업을 수행 ( **이벤트 방식** ) 
 - 이벤트가 발생할때까지 (( **블로킹이 되지 않음** ))
 ----
 - 이벤트 방식 : 대규모 파일 디스크립터에 효율적 동작 / 대용량 서버
@@ -169,7 +169,19 @@ if (poll_fds[0].revents & POLLIN)
 
 ✅ epoll 구조체
 ```cpp
+typedef union epoll_data
+{
+  void* ptr; // 사건이 발생한 fd 들의 구조체 배열을 셋팅
+  int fd;    // 이벤트가 일어나게 될 파일 디스크립터
+  _unit32_t u32;
+  _unit64_t u64;
+} epoll_data_t;
 
+struct epoll_event
+{
+  __unint32_t events;  // 관찰할 이벤트
+  epoll_data_t data;
+};
 ```
 - ( select, poll ) VS ( epoll )
   - [공통점]
@@ -177,10 +189,46 @@ if (poll_fds[0].revents & POLLIN)
     - (2). 이벤트 발생 감지
   - [차이점]
     - 사건이 발생한 fd 들만의 구조체 배열을 셋팅
-
+  ⇨ 상태 변화를 위해 일일히 전체 파일 디스크립터를 대상으로 **반복문**을 돌릴 필요가 없다.
 
 ✅ 코드 작성
+```cpp
+#include <sys/epoll.h>
 
+// (1). 파일 디스크립터 저장소 생성
+int epoll_create(int_size);
+// (2). 관찰 대상으로 등록
+int epoll_ctrl(int epfd, int op, struct epoll, struct epoll_event *event);
+// (3). 변화를 대기
+```
+(1). 파일 디스크립터 저장소 생성<br/>
+```cpp
+#include <sys/epoll.h>
+
+// (1). 파일 디스크립터 저장소 생성
+int epoll_create(int_size);
+```
+- 성공 ( 파일 디스크립터 ), 실패 ( -1 )
+
+(2). 관찰 대상으로 등록
+```cpp
+int epoll_ctrl(int epfd, int op, struct epoll, struct epoll_event* event);
+```
+- int epfd : 상태 변화를 등록할 epoll 인스턴스 파일 디스크립터
+- op : (등록/삭제) 등의 이벤트 상황을 변경할 수 있다.
+  - EPOLL_CTL_ADD : fd 를 epoll 에 등록
+  - EPOLL_CTL_DEL : fd 를 epoll 에 삭제
+  - EPOLL_CTL_MOD : 등록된 fd 의 이벤트 발생 상황 변경
+ 
+(3). 변화 대기
+```cpp
+int epoll_wait(int epfd, struct epoll_event *event, int maxevents, int timeout);
+```
+- int epfd : 이벤트 발생의 관찰 영역인 epoll 인스턴스의 파일 디스크립터
+- events : 이벤트가 발생한 fd가 채워질 buffer 의 주소값
+- maxevents : 이전에 events buffer 에 등록 가능한 최대 이벤트
+- timeout : 1/1000초
+- 성공 ( 준비된 파일 디스크립터 수 반환 ), 실패 ( -1 )
 
 
 ### Ⅱ. thread
@@ -387,14 +435,58 @@ data.i = 236;
 - 공동으로 사용한다.
 
 🔯 **union** VS **struct** 의 차이
+
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/c6d1e004-deaa-4cda-b63c-60633a57d946)
 - union 과 struct 의 차이 : (( 메모리 공간 ))
   - union : 멤버들간의 메모리를 서로 공유
-  - 
+  - struct : 메모리를 서로 공유하지 않음
+```cpp
+typedef union example
+{
+  int i;
+  char a;
+} UNION;
+
+UNION union;
+union.i = 65;
+printf("%c %c %c %c", *(&union.a+0),*(&union.a+1),*(&union.a+2),*(&union.a+3)); // A 0 0 0
+
+union.i = 10000;
+printf("%c %c %c %c", *(&union.a+0),*(&union.a+1),*(&union.a+2),*(&union.a+3)); // DEL ' 0 0
+```
+[ 65 ] [ ] [ ] [ ] = [0100,0001] A null null null <br/>
+[ 90 ] [ ] [ ] [ ] <br/>
+[ 10000 ] [ ] [ ] [ ] = [0010,0111],[0001,0000][ ] [ ] = [39] [16] [ ] [ ] = ['] [DLE] [0] [0] <br/>
+
+✅ struct 구조체 메모리 공간
+
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/c833f5f8-250d-406a-b78c-5ca60e06708e)
+
+```cpp
+typedef struct student
+{
+  char a; // 1byte
+  int b;  // 4byte
+} STUDENT;
+
+STUDENT stu;
+printf("sizeof(stu) : (%d)", sizeof(stu)); // 8byte
+```
+- 5byte 가 아니라 8byte 인 이유는, 각 멤버를 저장하기 위해서, 기본 4 byte 단위로 구성한다. ( 4의 배수 )
+- char 데이터 1개를 저장하더라도, 그 1개의 데이터를 읽어오기 위해서, 기본적으로 4 byte 를 읽어오기 때문이다.
+
 
 ✅ 주소값 접근
 ```cpp
-char* 
+const char* str = "ABCDEFG";
+printf("%c %c %c", *(str+0), *(str+1), *(str+2)); // A B C
+
+char str[256]
+memcpy(str, "ABCDEFG", sizeof(str));
+printf("%c %c %c", *(str+0), *(str+1), *(str+2)); // 주소값으로 접근
 ```
+- *(주소값) : 포인터 값
 
 ✅ 참고 사이트
 - [TDM] (https://neuro.tistory.com/59)
+- [struct 구조체 메모리공간] (https://blog.naver.com/sharonichoya/220495444611)
