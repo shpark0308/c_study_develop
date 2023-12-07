@@ -192,23 +192,15 @@ struct epoll_event
   ⇨ 상태 변화를 위해 일일히 전체 파일 디스크립터를 대상으로 **반복문**을 돌릴 필요가 없다.
 
 ✅ 코드 작성
-```cpp
-#include <sys/epoll.h>
-
-// (1). 파일 디스크립터 저장소 생성
-int epoll_create(int_size);
-// (2). 관찰 대상으로 등록
-int epoll_ctrl(int epfd, int op, struct epoll, struct epoll_event *event);
-// (3). 변화를 대기
-```
 (1). 파일 디스크립터 저장소 생성<br/>
 ```cpp
 #include <sys/epoll.h>
 
 // (1). 파일 디스크립터 저장소 생성
-int epoll_create(int_size);
+int epoll_create(int size);
 ```
 - 성공 ( 파일 디스크립터 ), 실패 ( -1 )
+- int size : epoll 인스턴스 크기를 지정해줌, 하지만 더이상 사용하지 않음
 
 (2). 관찰 대상으로 등록
 ```cpp
