@@ -179,7 +179,7 @@ typedef union epoll_data
 
 struct epoll_event
 {
-  __unint32_t events;  // 관찰할 이벤트
+  __unint32_t events;  // 관찰할 이벤트 ( EPOLL_IN )
   epoll_data_t data;
 };
 ```
