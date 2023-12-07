@@ -86,15 +86,8 @@
 (2). poll : seleoct의 대안으로 간단하고 직관적이다, 파일 디스크립터의 상태를 감시하고 이벤트 발생 시, 알려줌 <br/>
 (3). epoll : 리눅스에서 사용되는 I/O Multiplexing 매커니즘 중 하나로, select 와 poll 의 단점을 극복하고 더 효율적으로 동작 <br/>
 
-✅ select() (**동기식**)
-
-✅ poll()
-
-
-✅ epoll()
-
 #### 2️⃣ select()
-✅ select ( **동기식** )
+✅ select
 - 가장 오래된 I/O 매커니즘, 여러 개의 (( 소켓 )) 을 감시, 어떤 소켓에서 입출력이 가능한지 선택
 - [원리]
   - 파일 디스크립터 상태 감시
@@ -102,6 +95,7 @@
   - 이후, 변한 상태를 확인하고 작업 수행
 - 다중 클라이언트를 동시에 관리
 - 비동기적인 입출력 작업을 수행하는데 사용
+- (( **이벤트** )) 방식의 비동기식 I/O 지원
 ``` cpp
 #include <sys/select.h>
 
@@ -126,8 +120,68 @@ if (FD_ISSET(STDIN_FILENO, &read_fds)) {
   // 파일 디스크립터 상태 확인
 }
 ```
+<br/>
 
-✅ poll()
+#### 3️⃣ poll()
+✅ poll
+- select() 와 유사하지만 제한점이 덜하다.
+- (( 파일 디스크립터 수에 대한 제한 )) 이 없다
+- [원리]
+  - 이벤트 발생 시, 파일 디스크립터의 리스트를 순회하여, 이벤트를 처리
+- 파일 디스크립터의 리스트를 순회해야 하기 때문에, 큰 규모의 작업에서는 **성능 저하**가 발생
+```cpp
+#include <poll.h>
+
+int poll(struct pollfd *fds, nfds_t nfds, int timeout); // nfds : 감시할 파일 디스크립터의 총 갯수
+```
+- 성공 (0) 실패 (-1)
+- int timeout : 1/1000초
+
+✅ poll 구조체
+```cpp
+struct pollfd
+{
+  int fd;        // 감시할 파일 디스크립터
+  short events;  // 감시할 이벤트 유형 ( POLLIN, POLLOUT )
+  short revents; // 실제 발생한 이벤트 유형
+};
+```
+- POLLIN  : 데이터 수신을 감시
+- POLLOUT : 데이터 전송 가능 여부 감시
+- POLLERR, POLLRDHUP
+- revents : events 에 지정한 이벤트 중에서 실제로 발생한 이벤트를 나타냄 ( 함수 반환 값 >
+
+✅ 코드 작성
+```cpp
+if (poll_fds[0].revents & POLLIN)
+```
+<br/>
+
+#### 4️⃣ epoll()
+✅ epoll()
+- 리눅스에서 사용되는 I/O 매커니즘 중 하나, 다른 운영체제에서는 사용이 안됨 ( 이식성이 안좋음 )
+- select와 poll 의 단점을 극복하고 더 효율적으로 동작
+- (( 이벤트가 발생한 파일 디스크립터 )) 에 대해서만 작업을 수행 ( **이벤트 방식** )
+- 이벤트가 발생할때까지 (( **블로킹이 되지 않음** ))
+----
+- 이벤트 방식 : 대규모 파일 디스크립터에 효율적 동작 / 대용량 서버
+- 폴링 방식   : 적은 양의 파일 디스크립터에 유용
+
+✅ epoll 구조체
+```cpp
+
+```
+- ( select, poll ) VS ( epoll )
+  - [공통점]
+    - (1). 관심있는 파일 디스크립터 등록
+    - (2). 이벤트 발생 감지
+  - [차이점]
+    - 사건이 발생한 fd 들만의 구조체 배열을 셋팅
+
+
+✅ 코드 작성
+
+
 
 ### Ⅱ. thread
 #### 0️⃣ thread 구조
@@ -307,8 +361,40 @@ timeout.tv_usec = 0;
 - [자료형]
   - time_t ( 4byte, 8byte ( = int 형 ))
   - suseconds_t ( 정수형 ( = int 형 ))
-✅ epoll()
+ 
+✅ union ( 공용체 )
+```cpp
+union data
+{
+  char a;
+  int i;
+};
 
+typedef union data
+{
+  char a;
+  int i;
+}DATA;
+
+// union 선언
+union data temp1;
+DATA temp2;
+
+// union 변수 할당
+data.a = 'A'
+data.i = 236;
+```
+- 공동으로 사용한다.
+
+🔯 **union** VS **struct** 의 차이
+- union 과 struct 의 차이 : (( 메모리 공간 ))
+  - union : 멤버들간의 메모리를 서로 공유
+  - 
+
+✅ 주소값 접근
+```cpp
+char* 
+```
 
 ✅ 참고 사이트
 - [TDM] (https://neuro.tistory.com/59)
