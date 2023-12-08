@@ -107,6 +107,7 @@ int fd_num = select(**fd_max+1**, &reads, 0, 0, &timeout);
 ```
 - fd_max + 1 : 가장 큰 파일 디스크립터 값 + 1 ( 0 <=  X  <=  가장 큰 파일 디스크립터 값 ) 를 참조하기 위해
 - struct timeval* timeout : select 가 반환되고 다시 타이머가 자동으로 새로 고쳐지거나 다시 시작하지 않는다
+  - 해당 time 안에 **한번** 들어왔는가 / 아닌가를 확인 여부
 
 ✅ 관련 코드
 ```cpp
