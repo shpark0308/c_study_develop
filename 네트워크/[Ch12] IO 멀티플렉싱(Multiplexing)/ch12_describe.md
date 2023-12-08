@@ -78,11 +78,13 @@
 ✅ I/O Multiplexing
 - 여러 개의 I/O 작업을 (( 동시에 )) **관리**하고 / **감시** 하는 기술
 - 여러 (( 소켓 )) 이나 (( 파일 디스크립터 ))의 상태를 감시하면서, 입출력 작업이 발생하는 것을 효과적으로 처리
+- fd_set 으로 파일 디스크립터를 묶어서 관리
 - ( select / poll / epoll ) 과 같은 시스템 콜이 이러한 목적으로 사용 <br/>
 ![image](https://github.com/shpark0308/c_study_develop/assets/60208434/b869c86a-8e8f-4024-8aab-4d5cbc724d2f)
 
+
 (1). select : 가장 오래된 I/O Multiplexing 매커니즘 중 하나로, 여러 개의 소켓을 감시하고, 그 중 어떤 소켓에서 입출력 가능한지 선택 <br/>
-(2). poll : seleoct의 대안으로 간단하고 직관적이다, 파일 디스크립터의 상태를 감시하고 이벤트 발생 시, 알려줌 <br/>
+(2). poll : select의 대안으로 간단하고 직관적이다, 파일 디스크립터의 상태를 감시하고 이벤트 발생 시, 알려줌 <br/>
 (3). epoll : 리눅스에서 사용되는 I/O Multiplexing 매커니즘 중 하나로, select 와 poll 의 단점을 극복하고 더 효율적으로 동작 <br/>
 <br/>
 
@@ -106,8 +108,7 @@ int select(int nfds, fd_set* <b>read_fds</b>, fd_set* <b>write_fds</b>,fd_set* <
 int fd_num = select(**fd_max+1**, &reads, 0, 0, &timeout);
 ```
 - fd_max + 1 : 가장 큰 파일 디스크립터 값 + 1 ( 0 <=  X  <=  가장 큰 파일 디스크립터 값 ) 를 참조하기 위해
-- struct timeval* timeout : select 가 반환되고 다시 타이머가 자동으로 새로 고쳐지거나 다시 시작하지 않는다
-  - 해당 time 안에 **한번** 들어왔는가 / 아닌가를 확인 여부
+- struct timeval* timeout 한번 설정해주고, 다시 재 설정해야한다, 안그러면 **다시 초기화가 안된다.**
 
 ✅ 관련 코드
 ```cpp
@@ -137,7 +138,7 @@ if (FD_ISSET(STDIN_FILENO, &read_fds)) {
 
 int poll(struct pollfd *fds, nfds_t nfds, int timeout); // nfds : 감시할 파일 디스크립터의 총 갯수
 ```
-- 성공 (0) 실패 (-1)
+- 성공 (0) 실패 (-1), 양수 ( event 가 발생한 fd 의 갯수 )
 - int timeout : 1/1000초
 
 ✅ poll 구조체
@@ -163,6 +164,8 @@ if (poll_fds[0].revents & POLLIN)
 #### 3️⃣ epoll()
 ✅ epoll()
 - 리눅스에서 사용되는 I/O 매커니즘 중 하나, 다른 운영체제에서는 사용이 안됨 ( 이식성이 안좋음 )
+  - 리눅스 : epoll
+  - 윈도우 : iopcp
 - select와 poll 의 단점을 극복하고 더 효율적으로 동작
 - (( 이벤트가 발생한 파일 디스크립터 )) 에 대해서만 작업을 수행 ( **이벤트 방식** ) 
 - 이벤트가 발생할때까지 (( **블로킹이 되지 않음** ))
