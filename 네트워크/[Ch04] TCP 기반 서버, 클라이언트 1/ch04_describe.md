@@ -118,3 +118,151 @@ poll_fds[i] = -1;
 ```
 - poll_fds[i] 를 모두 0 으로 초기화
 - poll_fds[i].fd 파일 디스크립터를 -1 로 할당
+
+### Ⅱ. TCP/UDP 복습
+#### 0️⃣. 프로토콜 체계
+✅ 프로토콜
+- 통신 규약
+- TCP / IP 통신 규약
+- 프로토콜 <부류> / <체계> 로 나눠짐 ( int domain )
+
+✅ 프로토콜 체계
+- PF_INET(IPV4) : IPV4 주소 체계 // 제일 많이 사용
+- PF_INET6(IPV6) : IPV6 주소 체계
+- PF_LOCAL : LOCAL 통신을 위한 UNIX 프로토콜 체계
+- PF_PROTOCOL : Low-Level 소켓을 위한 프로토콜 체계
+- PF_IPX : IPX 노벨 프로토콜 체계
+
+✅ 프로토콜 타입 ( PROTOCOL TYPE )
+- 데이터 전송 방식 (2가지)
+  - [ SOCK_STREAM / SOCK_DGRAM ]
+- 같은 프로토콜 체계(IPV4) 에도 여러 데이터 전송 방식이 존재한다. ( TCP / UDP )
+- TCP / UDP 는 애초에 데이터 전송 방식이 다르기 때문에, (( 포트 번호가 같아도 구별 ))이 가능하다.
+<br/>
+
+#### 1️⃣ TCP
+✅ 연결 지향형 소켓 ( SOCK_STREAM )
+- [ TCP | 신뢰성 | 순서 보장 | 독립된 별도의 전송 라인 ]
+- (( 데이터 유실 없이 )) 목적지까지 데이터 전송
+- 순서를 보장
+- 데이터의 경계가 없다
+  - stream 데이터
+  - read / write 호출 횟수가 중요하지 않다.
+  - socket buffer ( byte 배열 )
+    - 최대 socket buffer 크기 : 8GB ( 8096 KB )
+    ```cpp
+    #include <sys/socket.h>
+
+    int getsockopt(int sockfd, int level, int optname, void* optval, socklen_t* optlen);
+    ```
+    - getsockopt : 소켓 옵션 값을 조회
+    - #include <sys/socket.h> 헤더에 포함
+    - int level : 소켓 종류 지정 ( ex. SOL_SOCKET, 일반적인 소켓 옵션 프로토콜 )
+    - int optname : 조회하고자 하는 옵션의 이름 (SO_RCVBUF : 수신할 버퍼의 크기, SO_SNDBUF : 송신할 버퍼의 크기 )
+    - void* optval : 조회한 옵션 값을 저장할 버퍼의 포인터
+    - socklen_t* optlen : optval 버퍼의 크기
+    - 반홬값 (int) : 성공 (0), 실패 (-1)
+    ```cpp
+    #include <sys/socket.h>
+
+    int recv_len, send_len;
+    socklen_t recv_opt = sizeof(recv_len);
+    socklen_t send_opt = sizeof(send_len);
+
+    int rRet = getsockopt(serv_sock, SOL_SOCKET, SO_RCVBUF, &recv_len, &recv_opt);
+    int sRet = getsockopt(serv_sock, SOL_SOCKET, SO_SNDBUF, &send_len, &send_opt);
+    printf("recv_size : (%d) send_size : (%d)", recv_len, send_len);
+    ```
+    - send 할 수 있는 데이터가 꽉 차면, 전송을 하지 않기 때문에, 데이터 유실 위험이 없다.
+- socket : socket 이 1:1 매칭이어야 한다.
+
+✅ 특성
+- recv / send 가 (( stream )) 처럼 전달 되기 때문에, Packet 의 전체 길이를 **[연동 규격서]** 에 명시해야한다.
+<br/>
+
+#### 2️⃣ UDP
+✅ 비연결 지향형 소켓 ( SOCK_DGRAM )
+- [ UDP | 비신뢰성 | 순서 보장 X | (( 독립된 데이터 패킷 )) | 연결 X ]
+- 데이터 유실 가능성이 크고, (( **빠른 전송** )) 을 목적으로 한다.
+- 데이터 순서를 보장하지 않는다.
+- 데이터의 경계가 있다.
+  - 독립된 데이터 패킷
+  - 한번에 보낼 수 있는 데이터 패킷의 크기가 제한적이다.
+  - (송신) : 두 번의 함수 호출 ( 송신과 수신의 함수 호출 횟수가 동일해야한다.)
+  - (수신) : 두 번의 함수 호출
+- 1:1 / 1:N 통신이 가능하다.
+  - 독립된 데이터 패킷
+  - 데이터를 (( 패킷 )) 단위로 전송
+  - Multicast, 브로드 캐스트에 사용
+- (( 연결 )) 이라는 개념이 없음
+<br/>
+
+### Ⅲ. TCP / UDP 전송 과정
+#### 1️⃣ TCP (신뢰성)
+- 신뢰성
+- Transmission Control Protocol
+
+✅ 3 Way-Handshake (연결)
+
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/6a175da2-6a45-41f7-96a6-564143feb678)
+
+✅ 4 Way-Handshake (연결 해제)
+<br/>
+
+#### 2️⃣ UDP (비신뢰성 )
+- 비신뢰성
+- User Datagram Protocol
+
+✅ 전송 방식
+
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/2d141843-dbf6-4e06-90de-09ffb02b4003)
+<br/>
+
+###  Ⅳ. 기타
+#### 1️⃣ ICMP 프로토콜
+✅ IP 프로토콜 ( L3 계층 )
+- 라우터 : 목적지에 도달하기 위해, 중간에 어떤 경로를 거쳐야 하는 가를 선택, 하지만 그 경로는 일정치 않음
+  - 목적지까지 갈 수 있는 최적의 경로로 안내
+  - 거쳐가야하는 지점 : Gateway
+    - 거쳐야 하는 Gateway 수 : Hop 수
+  - metrix 을 바탕으로 최적의 경로를 결정
+    - 네트워크 간의 최적의 경로를 가기 위해서, Network / Link 의 순위를 숫자로 변환한 것 
+- 따라서, **비연결지향성**, **신뢰 할 수 없는 프로토콜**
+- 도중에 오류가 발생하여도, 대비가 되어 있지 않다 ⇨ ICMP
+
+✅ ICMP
+- Internet Control Message Protocol
+- L3 ( IP / Network Layer )
+----
+- 주로, 네트워크 간의 (( **통신 문제** ))를 진단하고 (( **제어** ))하기 위해 사용되는 프로토콜
+- 네트워크에서 발생할 수 있는 **여러 이벤트, 오류**를 다른 네트워크에 전달 ( 주로, 라우터 / 서버 사용 )
+- ICMP 는 (( IP(네트워크) )) 계층에서 동작
+- [ IP Header ][ ICMP 헤더 ]
+
+✅ 특징
+- TCP / UDP 와 달리, L4 ( 전송 계층 ) 과 연결되어 있지 않다
+  - 두 네트워크 장비 간의 (( 연결 ))을 전제로 하지 않기 때문이다
+  - ICMP 메시지를 보내기 전, 두 장치간의 (( 연결 )) 작업이 필요하지 않다.
+  - 데이터 교환 작업 X
+- **특정 Port 를 대상으로 연결하는 것을 허용하지 않는다.**
+
+✅ 기능
+
+(1). ping
+- Host 또는 네트워크 장비가 다른 호스트나 장비에게 도달하는지 확인 여부
+
+(2). 오류 보고
+- "목적지 호스트 도달 불가"와 같은 오류 메시지를 생성하여 발신자에게 전달
+
+(3). MTU Path Discovery
+- IP 페킷이 지나가는 경로의 최대 전송 단위( MTU )를 결정하기 위해서, **ICMP 메시지**를 사용
+
+(4). 라우터 간 메시지 통신
+- 라우터는, ICMP 메시지를 통해, 네트워크 이상 상태를 감지하고, 해당 정보를 다른 네트워크에 전달 할 수 있도록 함
+<br/>
+
+#### 2️⃣ 데이터 단위
+✅ 데이터 단위
+
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/0fed8ec5-99c8-4a3b-b16d-5ba5e22b74e3)
+- 패킷 : 데이터 전송의 기본 단위
