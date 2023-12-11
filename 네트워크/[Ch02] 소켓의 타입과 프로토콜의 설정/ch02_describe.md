@@ -40,7 +40,7 @@
         - getsockopt : 소켓 옵션 값을 조회
         - #include <sys/socket.h> 에 포함
         - int level : 소켓 종류 지정 ( ex. SOL_SOCKET , 일반적인 소켓 옵션 프로토콜 )
-        - int optname : 조회하고자 하는 옵션의 이름 ( SO_RCVBUF, 수신 버퍼의 크기, SO_SNDBUF, 송신 버퍼의 크기 )
+        - int optname : 조회하고자 하는 옵션의 이름 ( SO_RCVBUF : 수신 버퍼의 크기, SO_SNDBUF : 송신 버퍼의 크기 )
         - void* optval : 조회한 옵션 값을 저장할 버퍼의 포인터
         - socklen_t *optlen : optval 버퍼의 크기
         - 반환값 (int) : 성공 ( 0 ) 실패 ( -1 )
@@ -68,7 +68,7 @@
   - (수신) : 두 번 함수 호출
 - 1:1 / 1:N 통신도 가능하다
   - 데이터를 패킷 단위로 전송
-  - 각 패킷은 독립적적
+  - 각 패킷은 독립적
   - Mulicast, 브로드 캐스트에 사용
 - (( 연결 )) 이라는 개념이 없음
 
