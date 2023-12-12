@@ -1,4 +1,4 @@
-![image](https://github.com/shpark0308/c_study_develop/assets/60208434/0f3e939b-9c20-4b26-8bf6-81b07bd92d65)### Ⅰ. TCP 연결
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/7a9bed69-24e5-4ce4-bb26-d7b83ffcdae5)### Ⅰ. TCP 연결
 #### 0️⃣ 배경 지식
 ✅ TCP
 - [ 연결 지향성 | 신뢰성 | 순서 보장 | 독립된 별도의 전송 라인 ]
@@ -129,7 +129,7 @@
 ✅ RTP VS UDP 차이
 
 [ 공통점 ] <br/>
-(1). RTP 와 UDP 모두, checksum 으로 오류를 감지하지만, 둘 다 오류 복구 기능이 없다. <br/>
+(1). RTP 와 UDP 모두, checksum 으로 오류를 감지하지만, 둘 다 **오류 복구 기능이 없다**. <br/>
 (2). RTP 는 UDP 의 통신 Port 를 사용한다. <br/>
 (3). 둘 다, Mulicast 를 지원 <br/>
 
@@ -152,6 +152,60 @@
 - 가변적인 간격으로 도착하는 데이터를 즉시 서버에게 보내지 않음
 - 지연 버퍼를 통해 다시 (( **일정한 간격** )) 으로 보정
 
+✅ 통신 과정
+
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/d5a57140-78c1-4258-b7de-0e4c3e7798a3)
+- [Audio/Video] → (( Codec )) 으로 압축 → RTP Header ( Timestamp 추가 ) → UDP 패킷 → IP 전송
+
+<br/>
+
+#### 3️⃣ RTP Header
+✅ Header
+
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/1837cf99-3053-4673-a047-b4daaf07667c)
+- PayLoad (7byte)
+
+#### 4️⃣ RTP, RTCP, RTMP
+✅ RTP <b>( UDP )</b>
+- Real Time Transport Protocol
+- [UDP] + ( 데이터 ) 전송
+- ( 시간 정보 ) 전달 (( 순서 보장 ))
+- <b>동영상 / 음성 스트리밍에서 사용</b>
+
+✅ RTCP <b>( UDP )</b>
+- RTP Control Protocol
+- RTP **세션의 제어 / 감시** 를 담당하는 프로토콜
+- [RTP] + [RTCP] : RTP 와 함께 사용되어, (( 주기적으로 )) 네트워크 상태, 세션 정보 등의 정보를 수집하고 제공
+
+✅ RTMP <b>( TCP )</b>
+- Real-Time Message Protocol
+- TCP 기반의 실시간 스트리밍 프롴토콜
+- Flash Player 기반으로 사용
+  - 현재는 Flash Player 사용이 줄어들어서, HTTP 기반의 HLS을 사용
+    - HLS ( HyperText Transport Protocol Live Streaming )
+  - HLS 는 HTML5의 일부로 모든 현대 브라우저에서 지원됨
+- <b>(( 웹 )) 에서 동영상 스트리밍에서 사용</b>
+
+🔯 HLS
+- HyperText Transport Protocol Live Streaming
+- HTTP 기반의 실시간 스트리밍 프로토콜
+- HTTP 이 TCP 의 기반이기 때문에, 기본적으로 세그먼트 재전송을 통해 (( **신뢰성** )) 을 보장한다.
+- TCP 를 기반으로 하기 때문에, 동영상을 세그먼트로 나누어 전송 
+- Flash Player 사용이 줄어든 대다수의 브라우저에서 HTML5 의 일부인 HLS 는 현대 모든 브라우저에 지원된다. 
+<br/>
+
+### Ⅳ. WebRTC
+#### 1️⃣ WebRTC
+- Web Real Time Communicatioin
+- 많은 회사에서 WebRTC 를 사용
+
+✅ WebRTC
+- 웹 어플리케이션 및 사이트들이 (( 별도의 SW 없이 )), ( 음성 / 영상 미디어 ) 데이터를 Browser 끼리 주고 받을 수 있도록 만든 기술
+- [WebRTC 프로그램] ↔ ( ( 음성 / 비디오 ) 미디어 데이터) ↔ [WebRTC 프로그램] : 별도의 SW 및 플러그인 없이 P2P 화상 회의 및 데이터 공유
+  - P2P ( Peer to Peer )
+- 웹 브라우저 상에서, (( 별도의 SW / 플러그 인 )) 없이, 화상 채팅, 음성 채팅 및 데이터 교환이 가능
+- (( RTP )) 기술을 바탕으로 사용
+<br/>
 
 ### Ⅴ. 기타
 #### 1️⃣ 판도라 이해
@@ -170,9 +224,77 @@
 (2). checksum <br/>
   - 송신 쪽에서 보내는 데이터가 제대로 된 값인지 **검증** 하기 위한 checksum 이 필요
   - 우리 연동규격서에도 반영
+<br/>
 
+✅ RTP VS HLS
 
-#### 3️⃣ 참고 사이트
+⚠ 질문
+- 둘 다 실시간 스트리밍 / 멀티 미디어 데이터 전송에 사용
+  - RTP (UDP) : 주로 음성 / 동영상 Streaming , 실시간 통신
+  - HLS : 웹에서 동영상 Streaming / 비디오 VOD 서비스
+- webapp 브라우저 를 Streaming 또는 VOD 서비스를 재생하는 판도라에서는 RTP 보다는 HLS 가 적합하지 않은가?
+- 왜 그때, WebRTC 를 사용하지 않고, HLS 를 사용한건가?
+  - WebRTC 는 ( RTP ( UDP ))기반이고
+  - HLS ( HTTP ( TCP )) 기반이였어서 그런것인지
+<br/>
+
+#### 2️⃣ 코드
+✅ uint8_t
+``` cpp
+struct Header
+{
+  uint8_t version : 2;
+};
+```
+- uint8_t : 8bit 의 부호 없는 정수 의미
+- **:2** : 8bit 의 정수를 2bit 로 제한하여 ( 00, 01, 10, 11 ) ( 0,1,2,3 ) 으로 표현
+<br/>
+
+#### 3️⃣ Byte Order
+✅ 표현 방식 (2가지)
+- 시스템 CPU 에 따라서 바이트 오더가 다르다
+
+|Little Endian|Big Endian|
+|:-----------:|:--------:|
+|Intel x86|IBM|
+|AMD|ARM|
+
+(1) Little Endian
+- [높은 주소] → [낮은 주소]
+- ex. 0x78 0x56 0x34 0x12
+
+(2) Big Endian
+- [낮은 주소] → [높은 주소]
+- ex. 0x12 0x34 0x56 0x78
+
+✅ 네트워크 & 호스트
+- [Host] : CPU (Intel) ⇒ Little Endian
+- [네트워크] ⇒ **Big Endian**
+----
+- h : host byte order
+- n : network byte order
+- l : long (32bit)
+- s : short (16bit)
+----
+```cpp
+short port = 0x1234;   // short (16bit)
+int   ip = 0x12345678; // int (32bit)
+
+printf("[port] %x:%x [ip] %x:%x", port, htons(port), ip, htonl(ip));
+// [port] 1234:3412 [ip] 12345678:78563412
+```
+- htonl : host → network, long (32bit) (ip주소)
+- htons : host → network, short (16bit) (port)
+
+✅ 메모리 단위
+``` cpp
+uint8_t num = 1;
+printf("size : (%d)", sizeof(num)); // 1
+```
+- 8bit = 1byte 이여서 크기가 1로 출력됨
+<br/>
+
+#### 4️⃣ 참고 사이트
 ✅ 사이트
 - [TCP/UDP HandShake] (https://velog.io/@rlacksals96/%EB%84%A4%ED%8A%B8%EC%9B%8C%ED%81%AC-TCPUDP%EC%99%80-3way-handshake#connection-%ED%95%B4%EC%A0%9C4way-handshake)
-- 
+- [WebRTC 이해] (https://medium.com/@hyun.sang/webrtc-webrtc%EB%9E%80-43df68cbe511)
