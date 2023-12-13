@@ -37,6 +37,16 @@ print(NULL);    // Integer : 0
 ```cpp
 Pointer = &Integer;
 
+#### 2️⃣ sleep
+✅ sleep 함수
+```cpp
+#include <unistd.h>
+
+sleep(60); // sec 단위
+```
+- [Linux] : sleep(60)    // sec 단위
+- [Window]: Sleep(60000) // msec 단위 
+
 print(10);       // Integer : 10
 print(NULL);     // Integer : 0
 print(nullptr);  // Pointer : 00000000
