@@ -37,6 +37,12 @@ print(NULL);    // Integer : 0
 ```cpp
 Pointer = &Integer;
 
+print(10);         // Integer : 10
+print(NULL);       // Integer : 0
+print(nullptr);    // Pointer : 00000000
+```
+- nullptr 은 (( **포인터** )) 로 인식하게 되어, **Pointer : 00000000** 출력
+
 #### 2️⃣ sleep
 ✅ sleep 함수
 ```cpp
