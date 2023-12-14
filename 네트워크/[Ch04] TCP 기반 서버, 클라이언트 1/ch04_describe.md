@@ -266,3 +266,37 @@ poll_fds[i] = -1;
 
 ![image](https://github.com/shpark0308/c_study_develop/assets/60208434/0fed8ec5-99c8-4a3b-b16d-5ba5e22b74e3)
 - 패킷 : 데이터 전송의 기본 단위
+<br/>
+
+#### 3️⃣ 코드 복습
+✅ multi_accept_serv / clnt.cpp
+```cpp
+typedef struct clnt_info
+{
+	int fd;
+	unsigned long pthread_id;
+	pthread_t* recv_pth;
+	bool bExit;
+} clnt_info_t;
+
+std::map<int,clnt_info_t*> clnt_map;
+
+void* clnt_garbage_func(void* arg)
+{
+  while(!bExit)
+  {
+    if (info->bExit == true)
+			{
+				pthread_join(*info->recv_pth, NULL);
+
+				int clnt_fd = info->fd;
+
+				free(info->recv_pth);
+				free(info);
+
+				clnt_map.erase(clnt_fd);
+			}
+  }
+}
+```
+- clnt 의 recv_thread 가 완전히 종료되면, 해당 clnt_info 의 메모리 공간을 free 하는 방법
