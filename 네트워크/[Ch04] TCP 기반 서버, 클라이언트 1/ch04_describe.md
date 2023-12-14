@@ -273,10 +273,10 @@ poll_fds[i] = -1;
 ```cpp
 typedef struct clnt_info
 {
-	int fd;
-	unsigned long pthread_id;
-	pthread_t* recv_pth;
-	bool bExit;
+  int fd;
+  unsigned long pthread_id;
+  pthread_t* recv_pth;
+  bool bExit;
 } clnt_info_t;
 
 std::map<int,clnt_info_t*> clnt_map;
@@ -286,16 +286,15 @@ void* clnt_garbage_func(void* arg)
   while(!bExit)
   {
     if (info->bExit == true)
-			{
-				pthread_join(*info->recv_pth, NULL);
+    {
+      pthread_join(*info->recv_pth, NULL);
 
-				int clnt_fd = info->fd;
+      int clnt_fd = info->fd;
+      free(info->recv_pth);
+      free(info);
 
-				free(info->recv_pth);
-				free(info);
-
-				clnt_map.erase(clnt_fd);
-			}
+      clnt_map.erase(clnt_fd);
+    }
   }
 }
 ```
