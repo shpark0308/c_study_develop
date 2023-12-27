@@ -43,7 +43,7 @@
 
 (2). CsIPCFactory
 - CreateIPCStream()
-- 
+
 (3). CsIPCStream
 - CSIPC_TYPE_e : SharedMemory / UDS 를 사용할 것인지
   ⇾ 그럼 **socket** 은 어디에 해당하는 것인지 ?
@@ -79,12 +79,13 @@
   - SERVER
   - CLIENT
   - ACCEPTEDCLIENT
-
+<br/>
 
 ### Ⅲ. QOS ( Quality of Service )
 #### 1️⃣ 네트워크 QOS
 ✅ QOS ( 서비스 품질 )
-- (( 한정된 네트워크 용량 )) 으로  
+- (( 한정된 네트워크 용량 )) 으로 [트래픽]을 제어
+  //// 어떻게 제어하는지
 
 ✅ 트래픽
 
