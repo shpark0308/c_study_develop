@@ -4,13 +4,12 @@
 ✅ 동기화
 - [다중 스레드 환경] ( 병렬 처리 ) ⇒ 데이터 / 자원을 안전하게 접근하기 위함
 - **동시에** 공유 데이터에 접근 시, 예기치 못한 문제가 발생
-  - ▪ 경쟁 조건 ( Race Condition )
-  - ▪ 데드락 
+  - 경쟁 조건 ( Race Condition )
+  - 데드락 
 <br/>
 
 #### 2️⃣ 공유 자원의 문제점
 - (( 병렬 처리 )) 다중 스레드 상황에서 자원을 공유할 시, 발생하는 문제점
-<br/>
 
 ✅ 경쟁 조건 ( Race Condition )
 - 여러 스레드가 **동시에** 공유 데이터를 (( **변경** )) 하고자 함
@@ -93,6 +92,7 @@ int sem_init(sem_t *sem, int pshared, unsigned int value);
 # pshared : 세마포어를 공유할 지 여부 ( 0 : 현재 프로세스 내에서만 공유 )
 # value : 세마포어의 초기 값
 ```
+- 세마포어 관련 함수의 리턴값 : 성공 (0), 오류 (-1)
 
 (2). sem_wait
 ``` cpp
@@ -114,12 +114,26 @@ int sem_destroy(sem_t *sem)
 ```
 - 세마포어 제거
 - 해당 세마포어에 대한 자원이 해제
------
-- 성공 (0), 오류 (-1)
+
+----
+```cpp
+void* threadFunc(void* arg)
+{
+  sem_wait(&sem)
+  // critical section
+  sem_post(&sem)
+}
+
+sem_init(&sem, 0, 1)
+```
+- sem_post(&sem) 을 하지 않으면, 다른 스레드에서 저 critical section 을 수행할 수 없음
+- sem_init(&sem, 0, **0**)
+  - 만약에 초기값을 0 으로 설정하면, sem_post 하여 1이 증가되기 전까지 다른 스레드들은 저 critical section 을 할 수 없음
 <br/>
 
 ✅ 조건 변수 ( Condition Variable )
-- 스레드 간의 특정 조건에 대한 통신을 도와줌
+- 스레드 간의 특정 조건에 대한 (( 통신 ))을 도와줌
+- 스레드 간의 특정 조건이 충족되기를 기다리는 (( **동기화** )) 기술
 <br/>
 
 #### 2️⃣ 병렬 처리 문제점
