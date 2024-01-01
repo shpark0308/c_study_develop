@@ -56,6 +56,42 @@ void* threadFunc2(void* arg)
 -----
 - 발생 가능한 시나리오
 ![image](https://github.com/shpark0308/c_study_develop/assets/60208434/cd9817c4-0415-4fd0-8cba-6c72ffa7e804)
+
+🔯 Busy Waiting & DeadLock 의 차이
+
+(1). Busy Waiting ( 바쁜 대기 )
+``` cpp
+bool isRecv = false;
+
+# thread 대기
+void* threadFunc()
+{
+  while(!isRecv)
+  {
+    // 계속 대기
+    continue;
+  }
+  // Recv 에 대한 처리
+}
+
+# main() 함수
+int main()
+{
+  int recv_size = recv();
+  if (recv_size>0)
+    isRecv = true;
+}
+```
+- OS 에서 원하는 자원을 얻기 위해 기다리는 것이 아니라, **권한을 얻을 때까지 확인** 하는 것을 의미
+- CPU의 자원을 쓸데 없이 낭비하기 때문에, ( 계속 대기 상태 ) **좋지 않은 스레드 동기화 방식**.
+⇒ 스레드 동기화를 위해서, **Busy Waiting Method** 가 아니라, Mutex, Semaphore 등 상호 배제 방식을 사용해야한다.
+  - Busy Waiting
+    - 계속 무한루프를 (대기) 돌면서, 계속 확인하는 방식
+    - CPU 의 자원을 낭비
+  - 상호 배제 ( Mutex Exclusion )
+    - Monitoring
+    - 어떤 스레드가 공유 자원을 획득 한 후, 다른 스레드는 그 스레드의 공유 자원을 모두 사용할 때까지 기다림
+    - 또한 해당 스레드가, 공유 자원을 모두 사용하면, 그때, 기다리고 있던 다른 스레드를 꺠움
 <br/>
 
 #### 3️⃣ 상호 배제
@@ -134,6 +170,39 @@ sem_init(&sem, 0, 1)
 ✅ 조건 변수 ( Condition Variable )
 - 스레드 간의 특정 조건에 대한 (( 통신 ))을 도와줌
 - 스레드 간의 특정 조건이 충족되기를 기다리는 (( **동기화** )) 기술
+
+(1). pthread_cond_signal
+``` cpp
+int pthread_cond_signal(pthread_cond_t *cond)
+```
+- cond 변수에 신호를 보내여, cond 변수를 기다리고 있는 ( 블로킹 ) 되어 있는 스레드를 다시 시작시키는 함수
+- pthread_cond_signal 함수는 cond 변수를 기다리는 여러 스레드 중에서 하나만 다시 시작시킴
+- 하지만 어느 스레드를 시작시킬지는 지정할 수 없음
+- 만약, cond 변수를 기다리는 스레드가 없다면, 아무 일도 일어나지 않는다.
+
+(2). pthread_cond_broadcast
+```cpp
+int pthread_cond_broadcast(pthread_cond_t *cond)
+```
+- 하나의 스레드만 다시 시작시키는 pthread_cond_signal 함수와 다르게, cond 변수를 기다리는 모든 스레드를 다시 시작
+- 하지만, pthread_cond 는 **특정 스레드를 지정하여, 다시 시작할 수는 없다**
+
+(3). pthread_cond_wait
+```
+int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
+```
+- cond 변수가 신호를 받을 때까지, 기다리는 함수 ( 블로킹 )
+- 이 함수를 실행하면, **mutex 의 lock 을 해제하고**, 다른 스레드는 mutex 변수의 lock 을 얻을 수 있다.
+- [ 2가지 기능 ]
+  - ① mutex lock 을 해제, 다른 스레드에서 mutex 사용
+  - ② cond 신호가 올 때까지, **대기**
+-------
+- 
+
+(4). pthread_cond_timedwait
+```
+```
+- cond 변수가 신호를 받을 때까지, time 을 기다림
 <br/>
 
 #### 2️⃣ 병렬 처리 문제점
@@ -144,6 +213,11 @@ sem_init(&sem, 0, 1)
 - 이 둘은 어떻게 다른 것인지
 - 
 
+
+### Ⅲ. 기타
+#### 1️⃣ 참조 사이트
+✅ 사이트
+- [Busy Waiting] (https://blog.system32.kr/80)
 
 
 
