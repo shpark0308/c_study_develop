@@ -57,7 +57,7 @@ void* threadFunc2(void* arg)
 - 발생 가능한 시나리오
 ![image](https://github.com/shpark0308/c_study_develop/assets/60208434/cd9817c4-0415-4fd0-8cba-6c72ffa7e804)
 
-🔯 Busy Waiting & DeadLock 의 차이
+🔯 Busy Waiting & 상호 배제
 
 (1). Busy Waiting ( 바쁜 대기 )
 ``` cpp
@@ -92,6 +92,18 @@ int main()
     - Monitoring
     - 어떤 스레드가 공유 자원을 획득 한 후, 다른 스레드는 그 스레드의 공유 자원을 모두 사용할 때까지 기다림
     - 또한 해당 스레드가, 공유 자원을 모두 사용하면, 그때, 기다리고 있던 다른 스레드를 꺠움
+----
+
+(2). BusyWaiting
+- CPU 를 계속 소모
+(3). DeadLock
+- 블로킹 상태로, 시스템이 계속 진행되지 않을 수 있다 ( CPU 사용을 안하고 있음 )
+- 무한 대기 상태
+
+🔯 인터럽트 방식의 상호배제
+- 대부분 [운영체제] 는 (( 시그널 / 이벤트 )) 와 같은 매커니즘 제공
+- [특정 이벤트] 발생 시, 대기 중인 스레드에게 알람
+- 스레드는 해당 이벤트에 대한 핸들러를 등록하고 핸들러가 호출되어 작업을 수행
 <br/>
 
 #### 3️⃣ 상호 배제
@@ -201,8 +213,11 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 
 (4). pthread_cond_timedwait
 ```
+int pthread_cond_timewait(pthread_cond_t *cond, pthread_mutex_t* mutex, const struct timespec* timeout)
 ```
-- cond 변수가 신호를 받을 때까지, time 을 기다림
+- cond 변수가 신호를 받을 때까지, timeout만큼의 시간을 기다림
+- timeout 이 발생하면, 대기가 해제되고, (( 다시 mutex 를 획득 ))하게 된다.
+- 반환 값 : 성공 (0) timeout (ETIMEDOUT)
 <br/>
 
 #### 2️⃣ 병렬 처리 문제점
@@ -215,7 +230,27 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 
 
 ### Ⅲ. 기타
-#### 1️⃣ 참조 사이트
+#### 1️⃣ 개발
+✅ timespec
+```cpp
+#include <ctime>
+
+struct timespec timeout;
+clock_gettime(clockid_t clk_id, struct timespec *tp);
+```
+- clockid_t clk_id [ CLOCK_REALTIME / CLOCK_MONOTONIC ]
+  - CLOCK_REALTIME : 현재의 실제 시간
+  - CLOCK_MONOTONIC : 실제 시간이 아닌, 시스템이 부팅된 이후의 상대적인 시간
+- struct timespec timeout;
+  - tv_sec
+    - 1초 단위
+    - 1970년 1월 1일 00:00:00 (UTC) 를 기준으로 현재까지의 (( 초 )) 를 저장 ( **epoch** )
+  - tv_nsec
+    - Nano sec (1,000,000,000)
+    - long 타입
+<br/>
+
+#### 2️⃣ 참조 사이트
 ✅ 사이트
 - [Busy Waiting] (https://blog.system32.kr/80)
 
