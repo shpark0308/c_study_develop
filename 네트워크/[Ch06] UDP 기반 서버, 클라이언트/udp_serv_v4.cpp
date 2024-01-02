@@ -25,7 +25,7 @@ int main()
 	memset(&serv_addr, 0, sizeof(serv_addr));
 
 	const char* serv_ip = "127.0.0.1";
-	const char* serv_port = "8088";
+	const char* serv_port = "8089";
 
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = inet_addr(serv_ip);
