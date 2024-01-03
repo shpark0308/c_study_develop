@@ -28,13 +28,25 @@ pthread_create(pthread3, nullptr, threadFunc, nullptr); // thread3
 ### Ⅱ. TCP 연결 종료
 #### 1️⃣ 4-way Handshake
 ✅ 4-way Handshake
-![image](https://github.com/shpark0308/c_study_develop/assets/60208434/11771453-0f8b-48d7-be2d-dc1a80d8beef)
 
-✅ TIME-WAIT
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/629e4f0e-2df2-4c82-a5a9-ceba556393d8)
+- Fin-Wait 1
+- Fin-Wait 2
+- Close-Wait
+- Time-Wait
 
-(1). FIN-WAIT
-(2). CLOSE-WAIT
-(3). TIME-WAIT
+✅ Half Open / Half Close
+
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/90c4267c-bce8-4bae-bbc7-7894a7438ef0)
+
+(1). Half Open
+- Client → [SYN] → Server 에게 보냄
+- Server → [ACK] → Client 에게 보내지 않음
+- Client 는 서버로부터 [ACK] 를 일정 Timeout 이내에 받지 못하고, 연결을 이루지 못하게 됨
+
+(2). Half Close
+- ( Client → [FIN] → Server ), ( Server → [ACK] → Client ) 보냄
+- Server → [잔여 패킷] → Client 를 보낸 이후, 클라이언트에게 FIN 플래그를 보내지 아니하여, 연결 종료를 이루지 못함
 
 ✅ 특이점
 
