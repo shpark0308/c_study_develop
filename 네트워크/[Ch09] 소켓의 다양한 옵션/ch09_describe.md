@@ -29,6 +29,132 @@ SO_REUSEADDR
  >> 마지막에, 
 
 
+### Ⅰ. 캡슐화
+#### 1️⃣ 캡슐화
+✅ 캡슐화
+- Header 를 붙혀가는 과정
+  - IP 주소 ( Source, Destination )
+  - Port 번호 ( Source, Destination )
+- 출발지 정보, 목적지 정보 또는 에러 체크 등의 필요 정보를 포함
 
+✅ 캡슐화 과정
+- PDU ( Protocol Data Unit )
+---
+(1). 응용 계층 ( L7 Application )
+> **메세지**
+- [응용 Header] + [User Data]
+
+(2). 전송 계층 ( L4 Transmission )
+> **TCP 세그먼트**
+- [TCP Header] + [응용 Header] + [User Data]
+- Src Port | Dest Port
+- TCP Header : 40 byte
+- segmentation 화, stream 데이터를 나누는 과정
+
+(3). 네트워크 계층 ( L3 Network )
+> **Header**
+- [IP Header] + [TCP Header] + [응용 Header] + [User Data]
+- [ Src IP | Dst IP ] + [ Src Port | Dst Port ]
+
+(4). 데이터 링크 계층 ( L2 Data Link )
+> **Frame**
+- [[ Ethernet Header ] + [IP Header] + [TCP Header] + [응용 Header]] + [User Data]
+- [ Src Mac Address | Dst Mac Address] + [ Src IP | Dst IP ] + [ Src Port | Dst Port ]
+<br/>
+
+#### 2️⃣ 역캡슐화
+✅ 역캡슐화
+- Header 를 제거하는 과정
+
+### Ⅱ. 네이글 알고리즘
+#### 1️⃣ 배경
+✅ 배경
+- [[ 여러 패킷 ]] + **[User Data]**
+- [ MacAddress | IP | Port | 응용 ] Header
+---
+- User Data 가 1byte 와 같이 작을 경우, 붙혀야 하는 패킷의 바이트 크기가 더 크게 된다.
+  - ex. **( 여러 패킷 )** ( 120 byte ) + **( User Data )** ( 1 byte )
+- 작은 크기의 데이터를 보낼 경우, 패킷을 여러 차례 비효율적으로 보내게 된다.
+<br/>
+
+### 2️⃣ Nagle On
+✅ **네이글 알고리즘**
+- ACK 를 받지 못한 경우, [ 버퍼 ] 에 데이터를 차곡 차곡 쌓음
+- 이럴 경우, 전달할 수 있는 데이터의 크기를 늘리고 + [패킷 Header] 를 붙혀, 효율적으로 패킷을 전송
+
+🔯 설명
+- 예시). Good 데이터
+
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/8a0a9bde-ee22-4da5-855a-0d1378e06527)
+
+(1). 먼저 G 를 보내고, ACK 를 기다림 <br/>
+(2). ACK 를 받을 때까지, o,o,d 를 차곡 차곡 버퍼에 넣음 <br/>
+(3). ACK 를 수신하면, 버퍼에 있는 o,o,d 를 전송
+
+---
+- 이러한 경우, 여러 차례 패킷을 보내기 보다는, 패킷 전송 횟수를 절감할 수 있다.
+- 하지만, 전송 속도가 느리다
+
+✅ Nagle On
+``` bash
+if there is new data to send then
+  if the window_size ⪰ MSS and available data is ⪰ MSS then
+    send complete MSS segment now
+  else
+    if there is unconfirmed data still in the pipe then
+      enqueue data in the buffer until an acknowledge is received
+    else
+      send data is immediately
+    end if
+  end if
+end if
+```
+- unconfirmed data : [ 전송된 Data ] 에 대한, **ACK** 를 받지 못한 데이터
+---
+- Data ⪰ MSS 보다 큰 데이터에 대해서는 전송
+- Data ⪯ MSS 일 경우
+  - ACK 를 받지 못하면, [ 버퍼 ]에 계속 데이터를 차곡 차곡 쌓음
+  - ACK 를 받는 경우, 데이터를 즉시 전달
+
+✅ 장점
+- 네트워크를 통해 전송해야 하는 **패킷 수를 줄임**
+- 데이터 크기를 늘려서 전송하기 때문에, **효율적인 대역폭을 사용**
+- 반면, 작은 데이터 패킷을 전송할 경우, 작은 패킷을 빈번하게 전송하여, 비효율적
+- TCP / IP 네트워크의 **효율성을 높임**
+
+✅ 단점
+- 작은 패킷이 누적되어, 전송 지연을 발생시킬 수 있다.
+- 전송 속도가 느리다
+<br/>
+
+#### 3️⃣ Nagle Off
+✅ Nagle Off
+- 잦은 패킷 전송이 있을 수 있으나, **전송 속도가 빠르다**
+- 하지만, 빈번하게 패킷을 전송하기 때문에, **혼잡 네트워크**을 유발할 수 있다.
+- 네트워크 부하 증가
+<br/>
+
+#### 4️⃣ TCP_NODELAY
+✅ Nagle On 의 문제점
+- 패컷 전송 수를 줄여서, **네트워크 번잡도를 줄임**, **효울성 극대화**
+- **전송 속도가 느리다**
+
+✅ TCP_NODELAY
+- Nagle 알고리즘 (( 비활성화 ))
+- 작은 패킷을 조합하지( 버퍼에 쌓이지 ) 않고, 즉시 전송하도록 하는 옵션
+---
+⇨ 작은 패킷을 누적시켜, 전송 지연을 유발하지 않고, 즉시 전송
+
+✅ 코드
+```cpp
+int enable = 1;
+int setsockopt(sock_fd, IPPROTO_TCP, TCP_NODELAY, (void*)enable, sizeof(enable));
+```
+<br/>
+
+### Ⅲ. 기타
+#### 1️⃣ 참고 사이트
+✅ 사이트
+- [네이글 알고리즘] (https://code-lab1.tistory.com/144)
 
 
