@@ -79,4 +79,58 @@ host = gethostbyaddr("127.0.0.1", 4, AF_INET);
 - socklen_t len : IPV4 ( 4byte ), IPV6 ( 16byte ) 로 설정
 - int family : AF_INET
 
-- 
+### Ⅱ. 예제
+#### 1️⃣ TCP & UDP 동일 Port
+✅ 서버
+- TCP 서버
+``` cpp
+========= TCP Connection =========
+TCP : 127.0.0.1:8088
+==================================
+
+int serv_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+int bRet = bind(serv_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) // 8088로 Bind
+```
+- UDP 서버
+``` cpp
+========= UDP Connection =========
+UDP : 127.0.0.1:8088
+==================================
+
+int serv_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+int bRet = bind(serv_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) // 8088로 Bind
+```
+---
+- TCP 와 UDP 서버는 **8088 포트**를 공유하여 사용한다.
+- 데이터 전송 방식이 다르기 때문에, **bind 에러** 또는 **포트 충돌**이 발생하지 않았다.
+
+✅ UDP 서버
+```bash
+$ ./ex_udp_clnt                 // 접속
+$ [Ctl-C]                       // 접속 종료
+========== Disconnection ==========
+
+$ ./ex_udp_clntt                 // 재접속
+========== Re Connection ==========
+```
+- UDP 는 1:1 통신, 즉 [연결] 이 전제 조건이 아니기 때문에, 재접속 해도, 계속 데이터를 받아올 수 있다.
+- UDP 는 recvFrom 할 때, 상대편의 IP / Port 정보를 받아오기 때문에, 끊고 재접속 해도 계속 이어서 데이터를 받아올 수 있다.
+
+✅ 클라이언트
+- TCP
+``` cpp
+int serv_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+connect(serv_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+```
+- UDP
+```cpp
+int serv_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+connect(serv_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+```
+---
+- **같은 포트**여도, 어떤 데이터 전송방식을 채택하느냐에 따라서, TCP 서버 / UDP 서버로 접속된다.
+  - SOCK_STREAM
+  - SOCK_DGRAM
+- 따라서, 동시에 아래와 같이 실행해도, 문제가 발생하지 않는다 <br/>
+&nbsp; &nbsp; &nbsp; ▪ 8088 Port : [ TCP 서버 ] ← [ TCP 클라이언트 ] <br/>
+&nbsp; &nbsp; &nbsp; ▪  8088 Port : [ UDP 서버 ] ← [ UDP 클라이언트 ]
