@@ -134,3 +134,37 @@ connect(serv_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 - 따라서, 동시에 아래와 같이 실행해도, 문제가 발생하지 않는다 <br/>
 &nbsp; &nbsp; &nbsp; ▪ 8088 Port : [ TCP 서버 ] ← [ TCP 클라이언트 ] <br/>
 &nbsp; &nbsp; &nbsp; ▪  8088 Port : [ UDP 서버 ] ← [ UDP 클라이언트 ]
+
+#### 2️⃣ TCP Recv 스트림 2개
+✅ 서버
+``` cpp
+int clnt_sock;
+
+void* recv_func(void* arg)
+{
+  while(true)
+  {
+    int recv_len = recv(clnt_sock, msg, BUF_SIZE, 0);
+    printf("(recv:%d) %s",msg);
+  }
+}
+
+pthread_create(thread1, nullptr, recv_func, idx1);
+pthread_create(thread2, nullptr, recv_func, idx2);
+pthread_create(thread3, nullptr, recv_func, idx3);
+```
+- 1:1 소켓 통신이지만, 입출력 함수 중에서, 입력 (recv) 스트림이 3개 있다.
+- 이러한 경우, 먼저  recv( .. ) 하는 스트림 통로로, 데이터를 받아온다.
+---
+- 결과 <br/>
+&nbsp; &nbsp; &nbsp; ▪ (recv:2) msg1 <br/>
+&nbsp; &nbsp; &nbsp; ▪ (recv:1) msg2 <br/>
+&nbsp; &nbsp; &nbsp; ▪ (recv:3) msg3 <br/>
+
+✅ 클라이언트
+``` cpp
+while(true)
+{
+  s
+}
+```
