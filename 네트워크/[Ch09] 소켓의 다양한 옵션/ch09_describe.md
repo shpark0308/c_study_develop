@@ -221,12 +221,44 @@ struct linger
 
 #### 2️⃣ FIN & RST
 ✅ FIN ( Finish )
-- 양
+- 양쪽 간의 합의된 **정상 종료**
+- FIN 을 
+- shutdown(socket, SHUT_WR);
 ✅ RST ( Reset )
+- **비정상 종료**
 <br/>
 
 #### 3️⃣ Pandora
-✅ Wireshark 패킷 분석
+✅ 패킷 분석 ( Wireshark )
+
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/0ba480b2-2bc7-45e5-8085-c50544f05d9c)
+
+![image](https://github.com/shpark0308/c_study_develop/assets/60208434/8edfb72d-5855-4324-8e02-eec7061ea369)
+
+- [Client] → Server : CMD_STBDISCONNECT : 2010 전달
+
+🔯 Audio / Video 소켓
+``` cpp
+struct linger linger;
+
+linger.l_onoff = 1;
+linger.l_linger = 0;
+
+int bRet = setsockopt(socket, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
+
+shutdown(socket, SHUT_WR);
+close(socket);
+```
+- shutdown
+  - 출력 스트림에서 더 이상, 데이터를 전송하지 않을 것을 전송
+  - **FIN 플래그** 전송
+- close
+  - 소켓을 완전 닫음
+  - shutdown 을 하여도, 만약 송신 큐에 아직 처리되지 않은 데이터가 있을 경우, 데이터 전송
+  - linger 옵션에 따라, **RST 패킷**을 전송하여, 강제 종료 처리
+
+🔯 Control 소켓
+- 4-way handshake 로 종료
 
 ✅ 코드 흐름
 - [CMD_STBDISCONNECT(2010)] → WM_CLIENT_DISCONNECT_REQ
@@ -239,7 +271,7 @@ struct linger
 
 (2). WM_CLIENT_DISCONNECT_REQ
 - clientDisconnectReq_Impl : CMD_STBDISCONNECT + 1
-- 
+<br/>
 
 ### Ⅳ. 기타
 #### 1️⃣ 참고 사이트
