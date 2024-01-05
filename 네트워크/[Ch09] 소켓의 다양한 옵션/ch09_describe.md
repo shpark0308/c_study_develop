@@ -197,6 +197,49 @@ struct linger
 <br/>
 
 // 비정상 연결 종료에는 어떠한 경우들이 있는지 보기
+### Ⅳ. RST
+#### 1️⃣ RST 패킷
+✅ TCP [RST 패킷]
+- RST (Reset)
+- TCP 연결을 **즉시 종료** 하고 초기상태로 돌림
+- 양방향에서 동시에 일어나는 중단 작업
+
+✅ RST 패킷 상황
+
+(1). 비정상 연결 종료
+- SO_LINGER ( l_onoff = 1, l_linger = 0 )
+- close() 이후, 소켓 버퍼에 있는 데이터를 즉시 버림, 비정상 연결 종료
+
+(2). 네트워크 오류
+- 네트워크 통신 중 ( 오류 ) 발생 시, RST 패킷을 사용하여, 즉시 종료
+
+(3). 리셋 요청
+- 연결을 재설정
+
+(4). 연결 거부
+- 서버가 클라이언트의 연결 요청을 거부할 때, 전달
+
+#### 2️⃣ FIN & RST
+✅ FIN ( Finish )
+- 양
+✅ RST ( Reset )
+<br/>
+
+#### 3️⃣ Pandora
+✅ Wireshark 패킷 분석
+
+✅ 코드 흐름
+- [CMD_STBDISCONNECT(2010)] → WM_CLIENT_DISCONNECT_REQ
+- WM_CLIENT_DISCONNECT 가 아니라 **WM_CLIENT_DISCONNEC_REQ** 를 호출
+
+✅ DISCONNECT / DISCONNECT_REQ
+
+(1). WM_CLIENT_DISCONNECT
+- CSocketSession::onStop() ( thread::onStop() ) 시, closeOption = [ TCPSOCKET_CLOSE_GRACEFULLY / TCPSOCKET_CLOSE_FORCE ] 후, WM_CLIENT_DISCONNECT 전달
+
+(2). WM_CLIENT_DISCONNECT_REQ
+- clientDisconnectReq_Impl : CMD_STBDISCONNECT + 1
+- 
 
 ### Ⅳ. 기타
 #### 1️⃣ 참고 사이트
