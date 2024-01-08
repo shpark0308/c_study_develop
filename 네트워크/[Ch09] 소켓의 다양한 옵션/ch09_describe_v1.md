@@ -26,6 +26,18 @@ int bRet = setsockopt(serv_sock, int level, int opt, (const void*) data, (sockle
 #### 2️⃣ 소켓 옵션 종류
 ✅ SOL_SOCKET ( 9가지 )
 - L5 계층 ( 세션 계층 )
+
+| Idx | 프로토콜 레벨 | 옵션 |
+|:---:|:---:|:---:|
+|1|SOL_SOCKET|SO_SNDBUF|
+|2|SOL_SOCKET|SO_RCVBUF|
+|3|SOL_SOCKET|SO_REUSEADDR|
+|4|SOL_SOCKET|SO_KEEPALIVE|
+|5|SOL_SOCKET|SO_BROADCAST|
+|6|SOL_SOCKET|SO_DONTROUTE|
+|7|SOL_SOCKET|SO_OOBINLINE|
+|8|SOL_SOCKET|SO_TYPE|
+|9|SOL_SOCKET|SO_ERROR|
 ---
 (1). SO_SNDBUF
 
