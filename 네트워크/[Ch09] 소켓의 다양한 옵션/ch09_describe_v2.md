@@ -1,34 +1,3 @@
-
-
-
-ⅠⅡⅢ2️⃣3️⃣4️⃣✅1️⃣
-
-### Ⅰ. 네이글 알고리즘
-#### 1️⃣ 네이글 알고리즘 ( Nagle )
-✅ 배경
->> Packet : [ Header | 데이터 ]
-- 
-
-TCP
-- (( 종료 상황 )) 프로그램 강제 종료 )) / (( 정상 종료 )) ==> bind 에러 발생
-  - 왜?
-    - 종료 ( 입력 스트림, 출력 스트림 ( 스트림 2개 ) 를 모두 끊어내는 = close(sock);
-    - 이렇게 하고도, 소켓을 소멸시켜도,
-      - 커널은 바로 소멸시키지 X
-      - 몇 초 정도 세션을 더 유지 ( 클라이언트와 아직 처리되지 않은 것을을 처리 ) : TIME_WAIT 상태
-        - 따라서, 커널에서는 바로 죽지 않기 때문에, 같은 포트로 또 연결 요청하면, 포트 충돌로 인해 에러 발생
-``` bash
-$ cat /proc/sys/net/ipv4/tcp_fin_timeout // 리눅스 (60초)
-```
-- 대다수 커널 관련한 정보가 /proc/sys 에 존재
-- /proc/sys/net/ipv4 에 tcp 통신과 관련된 커널 정보들이 존재
----
-SO_REUSEADDR
-- SO_REUSEADDR = TRUE
-  - TIME_WAIT 상태에 있는 소켓에 할당된 IP 주소와 포트를 새로 시작하는 소켓에 할당해주게 된다.
- >> 마지막에, 
-
-
 ### Ⅰ. 캡슐화
 #### 1️⃣ 캡슐화
 ✅ 캡슐화
@@ -65,6 +34,7 @@ SO_REUSEADDR
 #### 2️⃣ 역캡슐화
 ✅ 역캡슐화
 - Header 를 제거하는 과정
+<br/>
 
 ### Ⅱ. 네이글 알고리즘
 #### 1️⃣ 배경
@@ -196,7 +166,12 @@ struct linger
   - 지정된 시간 내에, 모두 보내지 못하고 소켓 버퍼에 남아있으면, 남은 데이터는 버림 ( 비정상 종료 )
 <br/>
 
-// 비정상 연결 종료에는 어떠한 경우들이 있는지 보기
+#### 2️⃣ 비정상 종료
+✅ 비정상 종료
+- (정상 종료)   : 소켓 버퍼에 있는 데이터들을 모두 전송한 뒤, 버리는 것
+- (비정상 종료) : 소켓 버퍼에 있는 데이터들을 모두 버리고, 소켓을 닫음
+<br/>
+
 ### Ⅳ. RST
 #### 1️⃣ RST 패킷
 ✅ TCP [RST 패킷]
@@ -218,8 +193,10 @@ struct linger
 
 (4). 연결 거부
 - 서버가 클라이언트의 연결 요청을 거부할 때, 전달
+<br/>
 
 #### 2️⃣ FIN & RST
+
 ✅ FIN ( Finish )
 - 양쪽 간의 합의된 **정상 종료**
 - FIN 플래그 수신 후, 상대방으로부터 ACK ( 종료 동의 ) 할 때까지 **대기**
@@ -230,6 +207,21 @@ struct linger
 - linger 옵션과 같이, 소켓 버퍼에 있는 데이터를 버리는 비정상 종료
 - 상호적인 합의가 아니라, **한쪽에서 강제 연결을 종료**하는데 사용
 - RST 플래그 수신 후, 종료에 대한 확인 / 응답을 기다리지 않고 **즉시 연결을 닫음**
+
+🔯 예시
+``` cpp
+struct linger _linger;
+
+_linger.l_onoff = 1;
+_linger.l_linger = 0;
+
+int bREt = setsockopt(serv_sock, SOL_SOCKET, SO_LINGER, (const void*)&_linger, sizeof(_linger));
+
+shutdown(serv_sock, SHUT_WR);
+close(serv_sock);
+```
+- shutdown : 출력 스트림을 닫을 때, FIN 플래그 전송
+- close : 소켓 버퍼에 남아있는 데이터들을 버리는 비정상 종료일 때, RST 플래그 전송
 <br/>
 
 #### 3️⃣ Pandora
@@ -242,14 +234,9 @@ struct linger
 - [Client] → Server : CMD_STBDISCONNECT : 2010 전달
 
 🔯 Audio / Video 소켓
+- FIN | RST 패킷을 모두 전송
+---
 ``` cpp
-struct linger linger;
-
-linger.l_onoff = 1;
-linger.l_linger = 0;
-
-int bRet = setsockopt(socket, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
-
 shutdown(socket, SHUT_WR);
 close(socket);
 ```
@@ -277,7 +264,7 @@ close(socket);
 - clientDisconnectReq_Impl : CMD_STBDISCONNECT + 1
 <br/>
 
-### Ⅳ. 기타
+### Ⅴ. 기타
 #### 1️⃣ 참고 사이트
 ✅ 사이트
 - [네이글 알고리즘] (https://code-lab1.tistory.com/144)
