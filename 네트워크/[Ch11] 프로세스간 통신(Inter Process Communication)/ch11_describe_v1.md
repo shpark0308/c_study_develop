@@ -77,6 +77,7 @@ int msg_id = msgget(key_id, IPC_CREAT|0666);
 ```
 - int msgget(key_t key_id, int flag);
 - ( 송신자 )와 ( 수신자 ) 모두 동일한 Msg ID 를 가지고 있어야 한다.
+- key_t key_id 가 동일하면 msg_id 도 동일하다
 
 (2). msgsnd
 ```cpp
@@ -94,16 +95,19 @@ if (bRet == -1) err_handle("msgsnd error()");
 ```cpp
 MsgType msg;
 
-size_t msg_size = msgrcv(msg_id, (void*)&msg, sizeof(msg.mtext), IPC_NOWAIT);
+size_t msg_size = msgrcv(msg_id, (void*)&msg, sizeof(msg.mtext), long type, IPC_NOWAIT);
 ```
 - size_t size = msgrcv(int msg_id, (void*) &msg_data, sizeof(msg_data), int flag);
 - IPC_NOWAIT : 데이터 블로킹을 방지
+- msgsnd / msgrcv 모두 MsgType msg를 전달하지만, **실제 전달하는 데이터는 msg.mtext** 로 보내는 데이터 크기도 sizeof(msg.mtext) 이다.
+- **long type** 에 맞는 데이터만 recv
 
 (4). msgctl
 ```cpp
 int msgctl(int msg_id, IPC_RMID, nullptr);
 ```
 - 메시지 큐 종료
+- **상대편이 메세지를 받기 전가지 msgctl(msg_id, IPC_RMID .. ) 로 msg_id 를 지우면 안된다.**
 
 ✅ 코드
 ```cpp
@@ -115,6 +119,25 @@ int msgget(key_t key, int flag);
 int msgsnd(int msg_id, const void* msg_q, size_t msg_size, int flag );
 size_t msgrcv(int msg_id, void* msg_q, size_t msg_size, long msg_type, int flag);
 ```
+
+✅ 명령어
+```bash
+$ ipcs
+$ ipcrm -q [msg_id]
+$ ipcrm -Q [key_id]
+```
+- 결괏값
+```
+------ Message Queues --------
+key        msqid      owner      perms      used-bytes   messages
+
+------ Shared Memory Segments --------
+key        shmid      owner      perms      bytes      nattch     status
+
+------ Semaphore Arrays --------
+key        semid      owner      perms      nsems
+```
+
 ### Ⅳ. 기타
 #### 1️⃣ 파일 전송
 ✅ scp
