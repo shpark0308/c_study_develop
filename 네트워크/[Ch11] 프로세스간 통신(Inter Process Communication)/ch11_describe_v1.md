@@ -98,7 +98,9 @@ MsgType msg;
 size_t msg_size = msgrcv(msg_id, (void*)&msg, sizeof(msg.mtext), long type, IPC_NOWAIT);
 ```
 - size_t size = msgrcv(int msg_id, (void*) &msg_data, sizeof(msg_data), int flag);
-- IPC_NOWAIT : 데이터 블로킹을 방지
+- 블로킹
+  - **0** : 블로킹
+  - **IPC_NOWAIT** : 논 블로킹
 - msgsnd / msgrcv 모두 MsgType msg를 전달하지만, **실제 전달하는 데이터는 msg.mtext** 로 보내는 데이터 크기도 sizeof(msg.mtext) 이다.
 - **long type** 에 맞는 데이터만 recv
 
@@ -118,6 +120,7 @@ int msgctl(int msg_id, IPC_RMID, nullptr);
 int msgget(key_t key, int flag);
 int msgsnd(int msg_id, const void* msg_q, size_t msg_size, int flag );
 size_t msgrcv(int msg_id, void* msg_q, size_t msg_size, long msg_type, int flag);
+int msgctl(int msg_id, IPC_RMID, nullptr);
 ```
 
 ✅ 명령어
@@ -137,6 +140,45 @@ key        shmid      owner      perms      bytes      nattch     status
 ------ Semaphore Arrays --------
 key        semid      owner      perms      nsems
 ```
+<br/>
+
+#### 3️⃣ 시나리오
+✅ Recv 블로킹
+
+(1). 0
+``` cpp
+size_t recv_size = msgrcv(msg_id, (void*)&msg, sizeof(msg.data), msg.type, 0);
+```
+- 블로킹
+- msgQ 에 데이터가 생겨서 recv 할 때까지 블로킹 발생
+
+(2). IPC_NOWAIT
+``` cpp
+size_t recv_size = msgrcv(msg_id, (void*)*msg, sizeof(msg.data), msg.type, IPC_NOWAIT);
+```
+- 논블로킹
+- msgQ 에 데이터가 없으면, 기다리지 않고 다음 명령어 수행
+
+✅ Recv 서버 2대
+```cpp
+// 서버 #1
+msg_id = 1234;
+size_t recv_size = msgrcv(msg_id, (void*)&msg, sizeof(msg.data), msg.type, 0);
+
+// 서버 #2
+msg_id = 1234;
+size_t recv_size = msgrcv(msg_id, (void*)&msg, sizeof(msg.data), msg.type, 0);
+```
+- 동일한 msg_id 에 대해서 [ Send ] 1대, [ Recv ] 2대
+- Recv 하는 2대 중에, 한 군데에서 받음
+---
+
+🔯 서버 구별
+- [ Recv ] 하는 서버 / 창구 를 구별하고 싶으면, **msg.type** 을 사용
+
+🔯 Send 가 먼저 시작
+- [Send] 에서는 계속 보내는데, [Recv] 를 늦게 start 해도, [Send] 하였던 것들이 전부 Recv 된다.
+<br/>
 
 ### Ⅳ. 기타
 #### 1️⃣ 파일 전송
@@ -150,7 +192,33 @@ $ scp [파일 명] root@[원격 IP 주소]:[받는 위치]
 - scp **-r** : 하위 디렉토리 포함하여, 전송
 <br/>
 
-#### 2️⃣ 참고 사이트
+#### 2️⃣ 헤더
+✅ header
+```cpp
+// msgQ_v1.h
+
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct _msgQ
+{
+  long type;
+  char msg[1024];
+} msgQ 
+```
+- header 에 #include 헤더도 포함시키 수 있다.
+
+✅ cpp
+```cpp
+// msgQ_v1.cpp
+
+#include "msgQ_v1.h"
+
+msgQ msg;
+```
+- #include "header 이름" 으로 사용
+
+#### 3️⃣ 참고 사이트
 ✅ 사이트
 - [ IPC 종류(6가지) ] (https://dar0m.tistory.com/233)
 
