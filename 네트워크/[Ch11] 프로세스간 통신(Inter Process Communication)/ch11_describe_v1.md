@@ -121,6 +121,48 @@ pid_t waitpid(pid_t pid, int* status, int options);
 <br/>
 
 ### Ⅳ. 기타
-#### 1️⃣ 참고 사이트
+#### 1️⃣ 헤더 파일
+✅ 구조체 정의
+- 잘못된 예시 ❌
+```cpp
+// echo_store.h
+
+#include <arpa.inet.h>
+
+sturct sockaddr_in serv_addr;
+
+// serv_addr.sin_family = AF_INET;
+// serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+// serv_addr.sin_port = htons(8088);
+```
+- 구조체 멤버의 초기화는 **전역 스코프** 에서 직접 수행할 수 없다.
+- 구조체 멤버에 값을 대입하는 것은, 함수 또는 블록 내에서 이루어져야 한다.
+---
+- 옳은 방식 ✔
+```cpp
+// echo_store.h
+
+#include <arpa/inet.h>
+
+struct sockaddr_in serv_addr;
+void initialize_sockaddr()
+{
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  serv_addr.sin_port = htons(8088);
+}
+```
+```cpp
+// echo_store.cpp
+
+int main()
+{
+  initialize_sockaddr();
+}
+```
+- 이런식으로, cpp 의 main() 함수에서 initialize_sock() 함수를 호출하여, 구조체 멤버 변수를 초기화 해야한다.
+<br/>
+
+#### 2️⃣ 참고 사이트
 ✅ 사이트
 - [ Sigaction ] (https://velog.io/@oio337a/sigaction)
