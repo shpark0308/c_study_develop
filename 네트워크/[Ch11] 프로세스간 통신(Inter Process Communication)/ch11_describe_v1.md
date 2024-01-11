@@ -1,5 +1,3 @@
-ⅠⅡⅢⅣⅤ1️⃣2️⃣3️⃣✅
-
 ### Ⅰ. 프로세스
 #### 1️⃣ 프로세스 개념
 ✅ 배경 지식
@@ -114,11 +112,143 @@ pid_t waitpid(pid_t pid, int* status, int options);
 ```
 - pid_t pid ( 자식 프로세스의 ID )
   - pid  < -1 : pid 의 절대값과 동일한 자식 프로세스 pid
-  - pid == -1 : 모든 자식 프로세스의 종료
+  - pid == -1 : **임의의 자식 프로세스의 종료**
   - pid == 0  : 현재 프로세스의 pid 와 같은 프로세스 그룹 id 를 가지는 모든 자식 프로세스의 종료
 - int options
   - options == 0 : wait() 함수와 같이 자식 프로세스의 종료를 기다림
 <br/>
+
+#### 3️⃣ 시나리오
+✅ for 문 안에 fork()
+```cpp
+for (int i=1; i<=10; i++)
+{
+  printf("[%d]", i);
+  if (i==3)
+    fork();
+}
+```
+- 예상 정답
+> 1 <br/> 2 <br/> 3 <br/> 4 ... 10 **( 부모 프로세스 )**<br/> 4 ... 10 **( 자식 프로세스 )**
+<br/>
+
+✅ 부모 프로세스 > 자식 프로세스
+- 부모 프로세스가 죽지 않은 경우 ( 블로킹 )
+- 자식 프로세스가 먼저 다 죽은 경우
+---
+```
+shpark0+ 2999518 99.3  0.0  13784  1776 pts/6    R+   16:08   4:06 ./echo_storeserv_v2
+shpark0+ 2999519  0.0  0.0      0     0 pts/6    Z+   16:08   0:00 [echo_storeserv_] <defunct>
+shpark0+ 2999520  0.0  0.0      0     0 pts/6    Z+   16:08   0:00 [echo_storeserv_] <defunct>
+```
+- 자식 프로세스는 죽지 않고 좀비 프로세스가 된다.
+<br/>
+
+✅ 부모 프로세스 < 자식 프로세스
+- 부모 프로세스가 먼저 죽고
+- 자식 프로세스가 늦게 죽는 경우
+---
+```
+shpark0+ 3003177  0.0  0.0  13784   180 pts/6    S    16:19   0:00 ./echo_storeserv_v3
+shpark0+ 3003178  0.0  0.0  13784   180 pts/6    S    16:19   0:00 ./echo_storeserv_v3
+```
+- 자식 프로세스는 쉘 프롬프트 창에, 부모프로세스 끝나고 남은 실행작업을 출력한다.
+- 이 경우, **자식 프로세스는 좀비 프로세스가 되지 않는다**
+<br/>
+
+### Ⅲ. 프로세스 통신 ( IPC )
+#### 1️⃣ MsgQ
+✅ 개념
+- 다른 프로세스 간의 단방향 통신
+- 단방향
+- 메모리 | 구조체
+- 동일 시스템
+
+✅ 예제
+``` cpp
+#include <sys/ipc.h>
+#include <sys/types.h>
+#include <sys/msg.h>
+
+int msg_id = msgget(IPC_KEY, IPC_CREAT | 0666);
+```
+<br/>
+
+#### 2️⃣ IPC
+✅ 메모리 영역
+
+(1). 프로세스에 속하는 자원
+
+(2). 운영체제에 속하는 자원
+- 프로세스 간의 공유
+- IPC : Pipe, Msg, 소켓 등 ( **운영체제 자원** )
+- 운영체제가 마련해주는 메모리 영역
+- **fork() 를 통해 복사하는 대상이 아니다**
+  - 프로세스의 독립된 메모리 자원이 아니기 때문이다.
+<br/>
+
+#### 3️⃣ Pipe
+✅ 개념
+- [부모] → [자식] 프로세스 간의 단방향 통신
+- 단방향
+- **파일 | 스트림**
+- 동일 시스템
+
+🔯 중요 개념
+- Pipe 는 **부모 프로세스**가 생성 ( 파이프 생성 주체 )
+
+✅ Pipe 함수
+
+(1). pipe 생성
+``` cpp
+#include <unistd.h>
+
+int fds[2];
+int pipe(int fds[2]);
+
+// pipe(fds);
+```
+- int fds[2] 파일 디스크립터를 사용하여, 파이프 이용
+  - **fds[0]** : 수신 (read)  , 파이프 출구
+  - **fds[1]** : 송신 (write) , 파이프 입구
+- pipe
+
+✅ 예제
+
+✅ 주의 사항 ⚠
+
+(1). Recv ( Read ) 2군데
+```cpp
+// 부모 프로세스
+int w_size = write(fds[1], msg, strlen(msg));
+int r_size = read(fds[0], msg, BUF_SIZE);
+
+// 자식 프로세스
+int r_size = read(fds[0], msg, BUF_SIZE);
+```
+- 부모 프로세스에서 보낸 write(fds[1], ... ) 가 [ 부모 ] or [ 자식 ] 중, 어느 프로세스로 read 할 지 모른다. ( 모호하다 )
+  - [ 부모 ] 프로세스가 read 할 수 있다.
+  - [ 자식 ] 프로세스가 read 할 수도 있다.
+ 
+(2). Read > Write
+```cpp
+pid_t pid = fork();
+if (pid == 0) {        // 자식 프로세스
+  read(fds[0], msg, BUF_SIZE);
+  printf("(recv): %s",msg);
+}
+
+else  {                // 부모 프로세스
+  sleep(100);
+  write(fds[1], msg, strlen(msg));
+  printf("(send): %s", msg);
+}
+```
+- read(fds[0]) 를 write(fds[1]) 보다 먼저 하는 경우
+  - 아무 것도 read 하지 못하게 되는 것인지 ❌
+  - fds[1] 이 있을 때까지, **블로킹** 되어 있다 &nbsp; ✔
+<br/>
+
 
 ### Ⅳ. 기타
 #### 1️⃣ 헤더 파일
