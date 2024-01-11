@@ -214,6 +214,27 @@ int pipe(int fds[2]);
 - pipe
 
 ✅ 예제
+- sigaction
+```
+#include <signal.h>
+#include <wait.h>
+
+void exit_proc(int flag)
+{
+  int status;
+  pid_t pid = wait(&status);
+}
+
+struct sigaction sig_struct;
+sig_struct.sa_handler = exit_proc;
+sig_struct.sa_flags = 0;
+sigemptyset(&sig_struct.sa_mask);
+
+sigaction(SIGCHLD, &sig_struct, 0);
+```
+- exit_proc() : 자식 프로세스가 종료되면, 해당 시그널을 받고 실행됨
+- SIGCHLD : 자식 프로세스 종료 조건
+
 
 ✅ 주의 사항 ⚠
 
@@ -248,7 +269,6 @@ else  {                // 부모 프로세스
   - 아무 것도 read 하지 못하게 되는 것인지 ❌
   - fds[1] 이 있을 때까지, **블로킹** 되어 있다 &nbsp; ✔
 <br/>
-
 
 ### Ⅳ. 기타
 #### 1️⃣ 헤더 파일
