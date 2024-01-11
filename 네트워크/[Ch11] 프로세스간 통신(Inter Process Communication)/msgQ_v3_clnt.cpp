@@ -43,7 +43,6 @@ void* send_thread(void*arg)
 		msg.type = send_type;
 
 		fgets(msg.text, sizeof(msg.text), stdin);
-		printf("AAAAAAAAAAAA (%s)  (%d) \n", msg.text, msg.type);
 		int bRet = msgsnd(msg_id, &msg, sizeof(msg.text), 0);
 		if (bRet<0) err_handle("msgsnd() error %s\n");
 
