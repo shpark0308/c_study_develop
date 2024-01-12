@@ -315,4 +315,14 @@ int main()
 
 #### 2️⃣ 참고 사이트
 ✅ 사이트
-- [ Sigaction ] (https://velog.io/@oio337a/sigaction)
+- [ Sigaction ] (https://velog.io/@oio337a/sigaction) 
+
+#### 3️⃣ netstat
+✅ netstat 포트 확인
+```bash
+$ netstat -ano | grep "8088"
+
+tcp        0      0 0.0.0.0:8088            0.0.0.0:*               LISTEN      off (0.00/0/0)
+tcp        0      0 127.0.0.1:8088          127.0.0.1:52212         ESTABLISHED off (0.00/0/0)
+tcp        0      0 127.0.0.1:52212         127.0.0.1:8088          ESTABLISHED off (0.00/0/0)
+```
