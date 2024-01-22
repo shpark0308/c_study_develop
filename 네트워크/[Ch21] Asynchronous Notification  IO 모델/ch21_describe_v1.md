@@ -35,5 +35,5 @@ Every 0.5s: nvidia-smi dmon -s pum -c 1
 - 일반적으로, Graphic Memory 와 VRAM 을 같은 것을 가리키는 용어로 사용
 
 🔯 선후 관계
-- FB 
+- FB ∈ VRAM ∈ Graphic Memory 
 
