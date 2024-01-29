@@ -75,7 +75,14 @@ while(true)
 - 운영체제에 종속적
   - 리눅스 : epoll
   - 윈도우 : IOCP
- 
+
+✅ 이벤트
+|이벤트|설명|
+|:------:|:---:|
+|EPOLLIN|데이터 수신(입력)|
+|EPOLLHUP|연결 종료 / 파일 디스크립터 닫힘|
+|EPOLLET|엣지 트리거 모드|
+
 🔯 select VS epoll
 
 ![image](https://github.com/shpark0308/c_study_develop/assets/60208434/4465d502-e003-44d1-9344-4e1e122775ed)
@@ -147,6 +154,9 @@ fcntl(fd, F_SETFL, flag | O_NONBLOCK );
 - 동일한 이벤트 ( 데이터 수신 ) 이 많기 떄문에 ( 특정 이벤트가 아님 )
 
 &nbsp; &nbsp; &nbsp; **⇨ (서버) 임에도, 엣지 트리거가 아니라 레벨 트리거를 사용**
+
+🔯 논블로킹 / 비동기 처리 ( 효율적 처리 )
+
 <br/>
 
 #### 2️⃣ 레벨 트리거
