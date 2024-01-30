@@ -185,3 +185,53 @@ fcntl(fd, F_SETFL, flag | O_NONBLOCK );
 > 레벨 트리거 : 클라이언트
 - 단순함
 - 데이터의 송수신 상황이 다양하지 않음
+<br/>
+
+### Ⅲ. C / C++
+#### 1️⃣ extern
+✅ 소개
+- 변수 또는 함수가 다른 소스 파일에 선언되어 있음을 알림
+
+✅ 코드
+``` cpp
+// file1.cpp
+int globalVar;
+
+// file2.cpp
+extern int globalVar;
+```
+- extern int globalVar : 다른 파일 (file1.cpp) 에서 선언된 전역 변수를 사용할 수 있음
+<br/>
+
+#### 2️⃣ namespace
+✅ 소개
+- 이름 공간을 제공하여, 식별자들의 충돌을 방지하고 모듈성을 높임
+
+✅ 코드
+```cpp
+// header.h
+namespace MyNameSpace {
+  void myFunction();
+}
+
+// source.cpp
+#include "header.h"
+void MyNamespace::myFunction()
+{
+}
+```
+<br/>
+
+#### 3️⃣ class
+✅ 소개
+- 객체 지향 프로그래밍에서 ( 데이터 )와 ( 해당 데이터를 다루는 함수 ) 를 묶어 하나의 새로운 타입을 정의
+
+✅ 코드
+```cpp
+class MyClass
+{
+  public:
+    MyClass();           // 생성자
+    void myMethod(();    // 멤버 변수
+};
+```
